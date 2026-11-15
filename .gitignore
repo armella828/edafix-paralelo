@@ -1,3 +1,7 @@
 data/samples/
 edafix_seq
 edafix_par
+.venv/
+venv/
+**/__pycache__/
+*.pyc

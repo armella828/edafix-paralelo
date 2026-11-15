@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EDAFix — Clasificación Edafológica Paralela</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+
+<body
+  class="min-h-screen bg-slate-900 text-slate-100 font-sans antialiased bg-gradient-to-br from-slate-900 via-emerald-950/40 to-slate-900">
+
+  <!-- Header -->
+  <header class="border-b border-slate-700/70 bg-slate-900/80 backdrop-blur sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center text-xl shadow-lg shadow-emerald-900/50">
+          🌱</div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-emerald-300">EDAFix</h1>
+          <p class="text-xs text-slate-400 hidden sm:block">Clasificación Edafológica Paralela — Gran Chaco</p>
+        </div>
+      </div>
+      <span class="text-xs text-slate-400 bg-slate-800 border border-slate-700 px-3 py-1 rounded-full">API:
+        localhost:8000</span>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <main class="max-w-5xl mx-auto px-4 py-6">
+    <div class="flex gap-2 bg-slate-800 border border-slate-700 rounded-2xl p-1.5 mb-6">
+      <button data-tab="farmer"
+        class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-emerald-600 text-white shadow-lg shadow-emerald-900/40">
+        🌾 Modo Agricultor
+      </button>
+      <button data-tab="lab"
+        class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm transition text-slate-300 hover:text-white hover:bg-slate-700/60">
+        🧪 Modo Laboratorio
+      </button>
+    </div>
+
+    <!-- TAB 1: Modo Agricultor -->
+    <section id="panel-farmer" data-tab-panel class="block">
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
+        <h2 class="text-lg font-bold text-emerald-300 mb-1">Análisis de Muestra de Suelo</h2>
+        <p class="text-sm text-slate-400 mb-5">Sube una imagen de suelo (.jpg / .png) para clasificar el tipo de suelo y
+          obtener el cultivo recomendado.</p>
+
+        <!-- Dropzone -->
+        <div id="dropzone"
+          class="border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer hover:border-emerald-500 transition bg-slate-900/60">
+          <input id="soilFile" type="file" accept="image/*" class="hidden" />
+          <div id="dropzoneContent">
+            <div class="text-4xl mb-3">📸</div>
+            <p class="text-slate-300 font-medium">Arrastra y suelta tu imagen de suelo aquí</p>
+            <p class="text-slate-500 text-xs mt-1">o haz clic para seleccionar desde tu dispositivo</p>
+          </div>
+          <!-- Preview -->
+          <div id="previewContainer" class="hidden">
+            <img id="preview" alt="Vista previa suelo"
+              class="w-full max-h-80 object-cover rounded-xl border border-slate-700 mx-auto" />
+            <p class="text-slate-400 text-xs mt-2">Haz clic o arrastra otra imagen para cambiarla</p>
+          </div>
+        </div>
+
+        <button id="btnAnalyze"
+          class="mt-5 w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+          🌿 Analizar Suelo en Clúster
+        </button>
+      </div>
+
+      <!-- Resultado -->
+      <div id="resultFarmer" class="hidden mt-6 bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
+        <h3 class="text-base font-bold text-emerald-300 mb-4">📋 Resultado del Análisis</h3>
+        <div id="invalidSoilAlert" class="hidden mb-4 bg-red-900/40 border border-red-600 text-red-200 rounded-xl p-4 text-sm font-medium">
+          ⚠️ <strong>No se puede sembrar en este suelo:</strong> La imagen subida no corresponde a una muestra de terreno agrícola apta (colores o texturas fuera del perfil edafológico).
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+            <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Tipo de suelo</p>
+            <p id="soilType" class="text-2xl font-extrabold text-emerald-300">—</p>
+          </div>
+          <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+            <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Cultivo recomendado</p>
+            <p id="recommendedCrop" class="text-lg font-bold text-amber-300 mt-2">—</p>
+          </div>
+          <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+            <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Promedio RGB</p>
+            <p class="text-sm text-slate-200 mt-2 font-mono">
+              R: <span id="avgR" class="text-white font-bold">0</span> · G: <span id="avgG"
+                class="text-white font-bold">0</span> · B: <span id="avgB" class="text-white font-bold">0</span>
+            </p>
+          </div>
+          <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+            <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Índice de rugosidad (Sobel)</p>
+            <p id="roughness" class="text-2xl font-extrabold text-amber-400 mt-2">—</p>
+          </div>
+        </div>
+        <div class="mt-4 bg-slate-900/70 rounded-xl p-4 border border-slate-700 flex items-center justify-between">
+          <p class="text-xs uppercase tracking-wide text-slate-400">Tiempo de respuesta</p>
+          <p id="responseTime" class="text-xl font-extrabold text-emerald-400">—</p>
+        </div>
+
+        <!-- Entrenamiento rapido del dataset con muestras reales -->
+        <div class="mt-4 bg-slate-900/60 rounded-xl p-4 border border-slate-700/80">
+          <p class="text-xs text-slate-300 font-semibold mb-2">🎯 ¿Deseas agregar esta foto al Dataset de Referencia para mejorar la precisión?</p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="trainCurrentSample('arenoso')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-900/60 hover:bg-emerald-700 text-emerald-200 border border-emerald-700 transition">+ Guardar como Arenoso</button>
+            <button type="button" onclick="trainCurrentSample('arcilloso')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-900/60 hover:bg-amber-700 text-amber-200 border border-amber-700 transition">+ Guardar como Arcilloso</button>
+            <button type="button" onclick="trainCurrentSample('limoso')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-lime-900/60 hover:bg-lime-700 text-lime-200 border border-lime-700 transition">+ Guardar como Limoso</button>
+            <button type="button" onclick="trainCurrentSample('no_apto')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-900/60 hover:bg-red-700 text-red-200 border border-red-700 transition">🚫 Guardar como No Apto</button>
+          </div>
+          <p id="trainStatusMsg" class="hidden text-xs text-emerald-400 mt-2"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Modo Laboratorio -->
+    <section id="panel-lab" data-tab-panel class="hidden">
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
+        <h2 class="text-lg font-bold text-emerald-300 mb-1">Benchmark en Vivo — Clúster OpenMPI + OpenMP</h2>
+        <p class="text-sm text-slate-400 mb-5">Ejecuta la comparativa secuencial vs. paralela sobre los 3 nodos del
+          clúster.</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+          <div>
+            <label for="numImages" class="block text-sm font-semibold text-slate-300 mb-2">Cantidad de imágenes
+              (N)</label>
+            <select id="numImages"
+              class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500">
+              <option value="500">500 imágenes</option>
+              <option value="1000">1000 imágenes</option>
+            </select>
+          </div>
+          <div>
+            <label for="ompThreads" class="block text-sm font-semibold text-slate-300 mb-2">Hilos OpenMP</label>
+            <select id="ompThreads"
+              class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500">
+              <option value="1">1 hilo</option>
+              <option value="2">2 hilos</option>
+              <option value="4">4 hilos</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="btnBenchmark"
+          class="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold transition shadow-lg shadow-amber-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+          ⚡ Ejecutar Benchmark en Vivo (3 Nodos)
+        </button>
+      </div>
+
+      <!-- KPI + comparativa -->
+      <div id="benchmarkResults" class="hidden mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5">
+          <h3 class="text-base font-bold text-emerald-300 mb-4">📊 Métricas de Rendimiento</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
+              <p class="text-xs text-slate-400">Tiempo Secuencial (T1)</p>
+              <p id="kpiT1" class="text-lg font-extrabold text-amber-400 mt-1">—</p>
+            </div>
+            <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
+              <p class="text-xs text-slate-400">Tiempo Paralelo (Tp)</p>
+              <p id="kpiTp" class="text-lg font-extrabold text-emerald-400 mt-1">—</p>
+            </div>
+            <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
+              <p class="text-xs text-slate-400">Speedup (T1/Tp)</p>
+              <p id="kpiSpeedup" class="text-lg font-extrabold text-emerald-300 mt-1">—</p>
+            </div>
+            <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
+              <p class="text-xs text-slate-400">Eficiencia</p>
+              <p id="kpiEff" class="text-lg font-extrabold text-amber-300 mt-1">—</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5">
+          <h3 class="text-base font-bold text-emerald-300 mb-4">⏱️ Comparativa de Tiempos</h3>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300 font-semibold">Secuencial (T1) — 1 proceso</span>
+                <span id="barT1Label" class="text-amber-400 font-mono">—</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-4 border border-slate-700">
+                <div id="barT1" class="h-4 bg-amber-500 rounded-full transition-all duration-700" style="width: 0%">
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300 font-semibold">Paralelo (Tp) — OpenMP</span>
+                <span id="barTpLabel" class="text-emerald-400 font-mono">—</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-4 border border-slate-700">
+                <div id="barTp" class="h-4 bg-emerald-500 rounded-full transition-all duration-700" style="width: 0%">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="benchmarkError"
+        class="hidden mt-6 bg-red-900/40 border border-red-700 text-red-200 rounded-xl p-4 text-sm"></div>
+    </section>
+  </main>
+
+  <footer class="max-w-5xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
+    EDAFIX — Tel420 Parallel AI for Soil Classification · FastAPI + Uvicorn + MPI/OpenMP
+  </footer>
+
+  <script>
+    const API_BASE = window.location.port === "3000" ? ("http://" + window.location.hostname + ":8000") : "";
+
+    // ---------- Tabs ----------
+    const tabs = document.querySelectorAll('[data-tab]');
+    const panels = document.querySelectorAll('[data-tab-panel]');
+
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(b => {
+          b.classList.remove('bg-emerald-600', 'text-white', 'shadow-lg', 'shadow-emerald-900/40', 'hover:bg-slate-700/60');
+          b.classList.add('text-slate-300');
+        });
+        btn.classList.add('bg-emerald-600', 'text-white', 'shadow-lg', 'shadow-emerald-900/40');
+
+        panels.forEach(p => { p.classList.add('hidden'); });
+        const panel = document.getElementById('panel-' + btn.dataset.tab);
+        if (panel) panel.classList.remove('hidden');
+      });
+    });
+
+    // ---------- Tab 1: Analizar suelo ----------
+    const dropzone = document.getElementById('dropzone');
+    const dropzoneContent = document.getElementById('dropzoneContent');
+    const previewContainer = document.getElementById('previewContainer');
+    const preview = document.getElementById('preview');
+    const soilFile = document.getElementById('soilFile');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const resultFarmer = document.getElementById('resultFarmer');
+    let selectedFile = null;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+      dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
+    });
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+    dropzone.addEventListener('click', () => soilFile.click());
+    soilFile.addEventListener('change', () => { if (soilFile.files[0]) handleFile(soilFile.files[0]); });
+
+    function handleFile(file) {
+      selectedFile = file;
+      const url = URL.createObjectURL(file);
+      preview.src = url;
+      previewContainer.classList.remove('hidden');
+      dropzoneContent.classList.add('hidden');
+      resultFarmer.classList.add('hidden');
+      btnAnalyze.disabled = false;
+    }
+
+    btnAnalyze.addEventListener('click', async () => {
+      const file = selectedFile || soilFile.files[0];
+      if (!file) { alert('Selecciona o arrastra una imagen de suelo primero.'); return; }
+      btnAnalyze.disabled = true;
+      btnAnalyze.textContent = '🌿 Analizando en clúster...';
+
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch(API_BASE + '/api/analyze-single', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || ('Error HTTP ' + res.status));
+        }
+
+        resultFarmer.classList.remove('hidden');
+        document.getElementById('soilType').textContent = data.soil_type || '—';
+        document.getElementById('recommendedCrop').textContent = data.recommended_crop || '—';
+        document.getElementById('avgR').textContent = Number(data.avg_rgb?.r ?? 0).toFixed(2);
+        document.getElementById('avgG').textContent = Number(data.avg_rgb?.g ?? 0).toFixed(2);
+        document.getElementById('avgB').textContent = Number(data.avg_rgb?.b ?? 0).toFixed(2);
+        document.getElementById('roughness').textContent = Number(data.roughness_index ?? 0).toFixed(4);
+        document.getElementById('responseTime').textContent = Number(data.response_time_ms ?? 0).toFixed(2) + ' ms';
+
+        // Badge visual por tipo de suelo
+        const invalidAlert = document.getElementById('invalidSoilAlert');
+        const badge = document.getElementById('soilType');
+        const cropEl = document.getElementById('recommendedCrop');
+        badge.className = 'text-2xl font-extrabold mt-2';
+        cropEl.className = 'text-lg font-bold mt-2';
+
+        if (data.is_valid_soil === false) {
+          invalidAlert.classList.remove('hidden');
+          badge.classList.add('text-red-400');
+          cropEl.classList.add('text-red-300');
+        } else {
+          invalidAlert.classList.add('hidden');
+          cropEl.classList.add('text-amber-300');
+          badge.classList.add(
+            data.soil_type === 'Arenoso' ? 'text-emerald-400' :
+              data.soil_type === 'Arcilloso' ? 'text-amber-400' : 'text-lime-400'
+          );
+        }
+      } catch (err) {
+        alert('Error conectando con el backend: ' + (err.message || 'desconocido'));
+      } finally {
+        btnAnalyze.disabled = false;
+        btnAnalyze.textContent = '🌿 Analizar Suelo en Clúster';
+      }
+    });
+
+    async function trainCurrentSample(label) {
+      const msgEl = document.getElementById('trainStatusMsg');
+      try {
+        const res = await fetch(API_BASE + '/api/train-sample', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ label }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Error al guardar muestra');
+        msgEl.textContent = '✅ Muestra guardada en data/dataset_suelos/' + label + ' (' + data.file + '). Volviendo a analizar...';
+        msgEl.classList.remove('hidden');
+        btnAnalyze.click();
+      } catch (err) {
+        alert('Error guardando en el dataset: ' + (err.message || 'desconocido'));
+      }
+    }
+
+    // ---------- Tab 2: Benchmark ----------
+    const btnBenchmark = document.getElementById('btnBenchmark');
+    const benchmarkResults = document.getElementById('benchmarkResults');
+    const benchmarkError = document.getElementById('benchmarkError');
+
+    btnBenchmark.addEventListener('click', async () => {
+      btnBenchmark.disabled = true;
+      btnBenchmark.textContent = '⚡ Ejecutando benchmark en clúster (3 nodos)...';
+      benchmarkError.classList.add('hidden');
+      benchmarkResults.classList.add('hidden');
+
+      try {
+        const res = await fetch(API_BASE + '/api/run-cluster', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            num_images: Number(document.getElementById('numImages').value),
+            omp_threads: Number(document.getElementById('ompThreads').value),
+          }),
+        });
+        const data = await res.json();
+
+        const T1 = Number(data.T1);
+        const Tp = Number(data.Tp);
+        const Speedup = Number(data.Speedup);
+        const Eficiencia = Number(data.Eficiencia);
+
+        document.getElementById('kpiT1').textContent = T1.toFixed(6) + ' s';
+        document.getElementById('kpiTp').textContent = Tp.toFixed(6) + ' s';
+        document.getElementById('kpiSpeedup').textContent = 'x' + Speedup.toFixed(2);
+        document.getElementById('kpiEff').textContent = (Eficiencia * 100).toFixed(2) + ' %';
+
+        const maxT = Math.max(T1, Tp) || 1;
+        document.getElementById('barT1').style.width = (T1 / maxT * 100) + '%';
+        document.getElementById('barT1Label').textContent = T1.toFixed(6) + ' s';
+        document.getElementById('barTp').style.width = (Tp / maxT * 100) + '%';
+        document.getElementById('barTpLabel').textContent = Tp.toFixed(6) + ' s';
+
+        benchmarkResults.classList.remove('hidden');
+      } catch (err) {
+        benchmarkError.textContent = '❌ Error ejecutando el benchmark: ' + (err.message || 'desconocido');
+        benchmarkError.classList.remove('hidden');
+      } finally {
+        btnBenchmark.disabled = false;
+        btnBenchmark.textContent = '⚡ Ejecutar Benchmark en Vivo (3 Nodos)';
+      }
+    });
+  </script>
+</body>
+
+</html>
