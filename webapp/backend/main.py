@@ -68,30 +68,42 @@ def is_docker_cluster_ready() -> bool:
         return False
 
 
+DEFAULT_BENCHMARK_METRICS = {
+    (500, 1): {"T1": 0.927044, "Tp": 0.408551, "Speedup": 2.2691, "Eficiencia": 0.7564},
+    (500, 2): {"T1": 0.927044, "Tp": 0.286630, "Speedup": 3.2343, "Eficiencia": 0.5390},
+    (500, 4): {"T1": 0.927044, "Tp": 0.274709, "Speedup": 3.3746, "Eficiencia": 0.2812},
+    (1000, 1): {"T1": 1.865714, "Tp": 0.832435, "Speedup": 2.2413, "Eficiencia": 0.7471},
+    (1000, 2): {"T1": 1.865714, "Tp": 0.565103, "Speedup": 3.3015, "Eficiencia": 0.5503},
+    (1000, 4): {"T1": 1.865714, "Tp": 0.524547, "Speedup": 3.5568, "Eficiencia": 0.2964},
+}
+
+
 def get_fallback_cluster_metrics(num_images: int, omp_threads: int) -> dict | None:
-    """Obtiene las metricas precalculadas desde data/resultados_benchmark.csv cuando Docker no esta activo."""
-    if not BENCHMARK_CSV_PATH.exists():
-        return None
-    with BENCHMARK_CSV_PATH.open("r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if (
-                int(row["N_Imagenes"]) == num_images
-                and int(row["Nodos_MPI"]) == 3
-                and int(row["Hilos_OMP"]) == omp_threads
-            ):
-                t1 = float(row["Tiempo_Secuencial_s"])
-                tp = float(row["Tiempo_Paralelo_s"])
-                speedup = float(row["Speedup"])
-                efficiency = float(row["Eficiencia"])
-                return {
-                    "num_images": num_images,
-                    "omp_threads": omp_threads,
-                    "T1": round(t1, 6),
-                    "Tp": round(tp, 6),
-                    "Speedup": round(speedup, 4),
-                    "Eficiencia": round(efficiency, 4),
-                }
+    """Obtiene las metricas precalculadas desde data/resultados_benchmark.csv o el respaldo en memoria."""
+    if BENCHMARK_CSV_PATH.exists():
+        with BENCHMARK_CSV_PATH.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if (
+                    int(row["N_Imagenes"]) == num_images
+                    and int(row["Nodos_MPI"]) == 3
+                    and int(row["Hilos_OMP"]) == omp_threads
+                ):
+                    t1 = float(row["Tiempo_Secuencial_s"])
+                    tp = float(row["Tiempo_Paralelo_s"])
+                    speedup = float(row["Speedup"])
+                    efficiency = float(row["Eficiencia"])
+                    return {
+                        "num_images": num_images,
+                        "omp_threads": omp_threads,
+                        "T1": round(t1, 6),
+                        "Tp": round(tp, 6),
+                        "Speedup": round(speedup, 4),
+                        "Eficiencia": round(efficiency, 4),
+                    }
+    preset = DEFAULT_BENCHMARK_METRICS.get((num_images, omp_threads))
+    if preset is not None:
+        return {"num_images": num_images, "omp_threads": omp_threads, **preset}
     return None
 
 
@@ -282,9 +294,21 @@ async def train_sample(params: TrainSampleParams) -> dict:
     img.save(out_file, format="PNG")
     return {"status": "saved", "label": label, "file": out_file.name}
 
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import os
 
 frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
+index_html_file = Path(frontend_path) / "index.html"
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/api/index", response_class=HTMLResponse)
+async def serve_index() -> HTMLResponse:
+    if index_html_file.exists():
+        return HTMLResponse(content=index_html_file.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>EDAFix Server Running</h1>")
+
+
 if os.path.exists(frontend_path):
     app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
