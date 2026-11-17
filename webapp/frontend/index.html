@@ -75,10 +75,20 @@
           </div>
         </div>
 
-        <button id="btnAnalyze"
-          class="mt-5 w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
-          🌿 Analizar Suelo en Clúster
-        </button>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button id="btnAnalyze"
+            class="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+            🌿 Analizar Suelo en Clúster
+          </button>
+          <button id="btnChangePhoto" type="button"
+            class="hidden w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold transition border border-slate-500">
+            📸 Subir otra foto
+          </button>
+          <button id="btnResetPhoto" type="button"
+            class="hidden w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-200 font-semibold transition border border-slate-700 hover:border-red-700">
+            🗑️ Limpiar
+          </button>
+        </div>
       </div>
 
       <!-- Resultado -->
@@ -86,6 +96,9 @@
         <h3 class="text-base font-bold text-emerald-300 mb-4">📋 Resultado del Análisis</h3>
         <div id="invalidSoilAlert" class="hidden mb-4 bg-red-900/40 border border-red-600 text-red-200 rounded-xl p-4 text-sm font-medium">
           ⚠️ <strong>No se puede sembrar en este suelo:</strong> La imagen subida no corresponde a una muestra de terreno agrícola apta (colores o texturas fuera del perfil edafológico).
+        </div>
+        <div id="monteSoilAlert" class="hidden mb-4 bg-amber-900/40 border border-amber-500 text-amber-200 rounded-xl p-4 text-sm font-medium">
+          🌿 <strong>Terreno cubierto de monte o maleza:</strong> Se detectó abundante cobertura vegetal en el terreno. Antes de sembrar se requiere realizar <strong>desmonte / limpieza y preparación de suelo</strong> (o tomar la muestra sobre tierra despejada).
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
@@ -111,18 +124,6 @@
         <div class="mt-4 bg-slate-900/70 rounded-xl p-4 border border-slate-700 flex items-center justify-between">
           <p class="text-xs uppercase tracking-wide text-slate-400">Tiempo de respuesta</p>
           <p id="responseTime" class="text-xl font-extrabold text-emerald-400">—</p>
-        </div>
-
-        <!-- Entrenamiento rapido del dataset con muestras reales -->
-        <div class="mt-4 bg-slate-900/60 rounded-xl p-4 border border-slate-700/80">
-          <p class="text-xs text-slate-300 font-semibold mb-2">🎯 ¿Deseas agregar esta foto al Dataset de Referencia para mejorar la precisión?</p>
-          <div class="flex flex-wrap gap-2">
-            <button type="button" onclick="trainCurrentSample('arenoso')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-900/60 hover:bg-emerald-700 text-emerald-200 border border-emerald-700 transition">+ Guardar como Arenoso</button>
-            <button type="button" onclick="trainCurrentSample('arcilloso')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-900/60 hover:bg-amber-700 text-amber-200 border border-amber-700 transition">+ Guardar como Arcilloso</button>
-            <button type="button" onclick="trainCurrentSample('limoso')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-lime-900/60 hover:bg-lime-700 text-lime-200 border border-lime-700 transition">+ Guardar como Limoso</button>
-            <button type="button" onclick="trainCurrentSample('no_apto')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-900/60 hover:bg-red-700 text-red-200 border border-red-700 transition">🚫 Guardar como No Apto</button>
-          </div>
-          <p id="trainStatusMsg" class="hidden text-xs text-emerald-400 mt-2"></p>
         </div>
       </div>
     </section>
@@ -249,6 +250,8 @@
     const preview = document.getElementById('preview');
     const soilFile = document.getElementById('soilFile');
     const btnAnalyze = document.getElementById('btnAnalyze');
+    const btnChangePhoto = document.getElementById('btnChangePhoto');
+    const btnResetPhoto = document.getElementById('btnResetPhoto');
     const resultFarmer = document.getElementById('resultFarmer');
     let selectedFile = null;
 
@@ -260,8 +263,27 @@
       const file = e.dataTransfer.files && e.dataTransfer.files[0];
       if (file) handleFile(file);
     });
-    dropzone.addEventListener('click', () => soilFile.click());
+    dropzone.addEventListener('click', () => {
+      soilFile.value = '';
+      soilFile.click();
+    });
     soilFile.addEventListener('change', () => { if (soilFile.files[0]) handleFile(soilFile.files[0]); });
+
+    btnChangePhoto.addEventListener('click', () => {
+      soilFile.value = '';
+      soilFile.click();
+    });
+
+    btnResetPhoto.addEventListener('click', () => {
+      selectedFile = null;
+      soilFile.value = '';
+      preview.src = '';
+      previewContainer.classList.add('hidden');
+      dropzoneContent.classList.remove('hidden');
+      resultFarmer.classList.add('hidden');
+      btnChangePhoto.classList.add('hidden');
+      btnResetPhoto.classList.add('hidden');
+    });
 
     function handleFile(file) {
       selectedFile = file;
@@ -271,6 +293,8 @@
       dropzoneContent.classList.add('hidden');
       resultFarmer.classList.add('hidden');
       btnAnalyze.disabled = false;
+      btnChangePhoto.classList.remove('hidden');
+      btnResetPhoto.classList.remove('hidden');
     }
 
     btnAnalyze.addEventListener('click', async () => {
@@ -299,17 +323,23 @@
 
         // Badge visual por tipo de suelo
         const invalidAlert = document.getElementById('invalidSoilAlert');
+        const monteAlert = document.getElementById('monteSoilAlert');
         const badge = document.getElementById('soilType');
         const cropEl = document.getElementById('recommendedCrop');
         badge.className = 'text-2xl font-extrabold mt-2';
         cropEl.className = 'text-lg font-bold mt-2';
+        invalidAlert.classList.add('hidden');
+        monteAlert.classList.add('hidden');
 
-        if (data.is_valid_soil === false) {
+        if (data.soil_status === 'monte') {
+          monteAlert.classList.remove('hidden');
+          badge.classList.add('text-amber-400');
+          cropEl.classList.add('text-amber-200');
+        } else if (data.is_valid_soil === false) {
           invalidAlert.classList.remove('hidden');
           badge.classList.add('text-red-400');
           cropEl.classList.add('text-red-300');
         } else {
-          invalidAlert.classList.add('hidden');
           cropEl.classList.add('text-amber-300');
           badge.classList.add(
             data.soil_type === 'Arenoso' ? 'text-emerald-400' :

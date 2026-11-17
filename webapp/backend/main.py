@@ -1,7 +1,9 @@
 import csv
+import importlib
 import re
 import shutil
 import subprocess
+import sys
 import time
 from io import BytesIO
 from pathlib import Path
@@ -11,7 +13,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image
 
-from classifier import analyze_image
+BACKEND_DIR = Path(__file__).resolve().parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+import classifier
 
 app = FastAPI(
     title="EDAFix API",
@@ -178,19 +184,24 @@ async def analyze_single(file: UploadFile = File(...)) -> dict:
         )
     raw = image.tobytes()  # 512 x 512 x 3 bytes, formato RGB crudo
 
-    analysis = analyze_image(raw)
+    importlib.reload(classifier)
+    analysis = classifier.analyze_image(raw)
 
     # Ejecutar la clasificacion contra el contenedor edafix-master si el cluster Docker esta activo
     if is_docker_cluster_ready():
         run_quick_classification(raw, omp_threads=1)
     else:
-        SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
-        USER_UPLOAD_PATH.write_bytes(raw)
+        try:
+            SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+            USER_UPLOAD_PATH.write_bytes(raw)
+        except OSError:
+            pass
 
     elapsed_ms = (time.perf_counter() - start_time) * 1000
 
     return {
         "is_valid_soil": analysis.get("is_valid_soil", True),
+        "soil_status": analysis.get("soil_status", "valid"),
         "soil_type": analysis["soil_type"],
         "recommended_crop": analysis["recommended_crop"],
         "avg_rgb": analysis["avg_rgb"],
