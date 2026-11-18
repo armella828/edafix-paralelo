@@ -71,7 +71,7 @@ def _extract_features(raw: bytes) -> dict:
             sum_b += b
 
             # Detectar pintura roja/carmesi artificial (paredes/casas/objetos rojos donde G esta muy cerca de B)
-            if (r > 85) and (r - g > 25) and ((g - b) < (r - g) * 0.20):
+            if (r > 85) and (r - g > 20) and ((g - b) < (r - g) * 0.26):
                 red_paint_pixels += 1
 
             is_valid_brightness = (14 <= r <= 248) and (10 <= g <= 240) and (4 <= b <= 222)
@@ -83,7 +83,7 @@ def _extract_features(raw: bytes) -> dict:
                 and (g >= b + 2)
                 and ((r - b) >= 6)
                 and ((r - g) <= 95)
-                and not ((r - g > 25) and ((g - b) < (r - g) * 0.20))
+                and not ((r - g > 20) and ((g - b) < (r - g) * 0.26))
             )
 
             # Pixel de monte / vegetacion / pastizal
