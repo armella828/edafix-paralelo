@@ -2,14 +2,13 @@
 
 Replica en Python la logica de `src/parallel/edafix_par.cpp` y `src/sequential/edafix_seq.cpp`
 para una imagen en formato RGB crudo de 512x512 bytes (WxH*3), incorporando:
-1. Deteccion de suelo agricola limpio (Arenoso, Arcilloso, Limoso).
+1. Analisis enfocado en la zona de suelo (70% inferior) para aceptar tanto tomas de cerca (macro)
+   como fotos de terrenos/parcelas donde aparece cielo u horizonte arriba.
 2. Deteccion de terreno con monte / cobertura vegetal densa (maleza, arbustos, pastizal).
-3. Rechazo de construcciones, casas, habitaciones y objetos (deteccion de lineas rectas H/V,
-   pintura roja/ladrillo artificial, cielo/ventanas y superficies lisas).
+3. Rechazo preciso de interiores, habitaciones, casas pintadas, cemento y objetos artificiales.
 """
 
 import math
-from pathlib import Path
 
 WIDTH = 512
 HEIGHT = 512
@@ -31,44 +30,36 @@ SOIL_PROFILES = [
 
 
 def _extract_features(raw: bytes) -> dict:
-    """Extrae caracteristicas cromaticas, geometricas (lineas H/V de construcciones) y de textura por parches."""
+    """Extrae caracteristicas cromaticas, geometricas y de textura tanto globales como en la franja de suelo (70% inferior)."""
     sum_r = 0.0
     sum_g = 0.0
     sum_b = 0.0
     edge_energy = 0.0
 
-    earth_pixels = 0
-    veg_pixels = 0
-    achromatic_pixels = 0
-    sky_or_artificial_pixels = 0
-    red_paint_pixels = 0
-    flat_pixels = 0
-    grain_flips = 0
-    hv_edges = 0
-    diag_edges = 0
-    interior_pixels = (WIDTH - 2) * (HEIGHT - 2)
+    # Contadores en la zona de suelo (70% inferior de la imagen, ignorando posible cielo en el 30% superior)
+    ground_y_start = int(HEIGHT * 0.30)
+    ground_pixels = 0
+    ground_earth_pixels = 0
+    ground_veg_pixels = 0
+    ground_achromatic_pixels = 0
+    ground_blue_or_magenta_pixels = 0
+    ground_r_sum = 0.0
+    ground_g_sum = 0.0
+    ground_b_sum = 0.0
 
     earth_r_sum = 0.0
     earth_g_sum = 0.0
     earth_b_sum = 0.0
+    earth_total_pixels = 0
 
-    top_g_sum = 0.0
-    top_b_sum = 0.0
-    top_count = 0
-    third_h = HEIGHT // 3
-
-    # Grilla de 16x16 parches (cada parche de 32x32 pixeles)
-    grid_n = 16
-    patch_size = WIDTH // grid_n
-    patch_grad = [0.0] * (grid_n * grid_n)
-    patch_earth = [0] * (grid_n * grid_n)
-    patch_veg = [0] * (grid_n * grid_n)
-    patch_count = [0] * (grid_n * grid_n)
+    red_paint_pixels = 0
+    hv_edges = 0
+    diag_edges = 0
+    interior_pixels = (WIDTH - 2) * (HEIGHT - 2)
 
     for y in range(1, HEIGHT - 1):
         row = y * WIDTH * 3
-        py = min(grid_n - 1, y // patch_size)
-        is_top_third = y < third_h
+        in_ground_zone = y >= ground_y_start
         for x in range(1, WIDTH - 1):
             idx = row + x * 3
             r = raw[idx]
@@ -79,56 +70,50 @@ def _extract_features(raw: bytes) -> dict:
             sum_g += g
             sum_b += b
 
-            if is_top_third:
-                top_g_sum += g
-                top_b_sum += b
-                top_count += 1
-
-            px = min(grid_n - 1, x // patch_size)
-            p_idx = py * grid_n + px
-            patch_count[p_idx] += 1
-
-            # 1. Pixeles grises/acromaticos (pisos, cemento, paredes, asfalto)
-            if max(r, g, b) - min(r, g, b) < 10:
-                achromatic_pixels += 1
-
-            # 2. Cielo, blanco brillante, azul o tonos magenta/violeta (ajenos a una muestra de suelo)
-            if (b > r + 4) or (b > g + 2) or (r > 220 and g > 220 and b > 220):
-                sky_or_artificial_pixels += 1
-
-            # 3. Pintura roja / pared roja / ladrillo artificial (R muy alto pero G cercano a B, sin ocre amarillo)
-            if (r > 85) and (r - g > 22) and ((g - b) < (r - g) * 0.25):
+            # Detectar pintura roja/carmesi artificial (paredes/casas/objetos rojos donde G esta muy cerca de B)
+            if (r > 85) and (r - g > 25) and ((g - b) < (r - g) * 0.20):
                 red_paint_pixels += 1
 
-            is_valid_brightness = (18 <= r <= 242) and (14 <= g <= 228) and (6 <= b <= 195)
+            is_valid_brightness = (14 <= r <= 248) and (10 <= g <= 240) and (4 <= b <= 222)
 
-            # 4. Pixel de tierra agricola real: R >= G > B con componente ocre natural (G-B >= 26% de R-G)
+            # Pixel de tierra natural (incluye arena clara, tierra ocre, arcilla rojiza, limo pardo y tierra negra humeda)
             is_warm_earth = (
                 is_valid_brightness
-                and (r >= g + 2)
-                and (g >= b + 5)
-                and ((r - b) >= 12)
-                and ((r - g) <= 85)
-                and ((g - b) >= (r - g) * 0.26)
+                and (r >= g - 2)
+                and (g >= b + 2)
+                and ((r - b) >= 6)
+                and ((r - g) <= 95)
+                and not ((r - g > 25) and ((g - b) < (r - g) * 0.20))
             )
-            # 5. Pixel de monte / vegetacion / follaje (G > R >= B)
+
+            # Pixel de monte / vegetacion / pastizal
             is_vegetation = (
                 is_valid_brightness
-                and (g > r)
-                and (g >= b + 10)
-                and (r >= b - 6)
-                and ((g - r) <= 85)
+                and not is_warm_earth
+                and (g >= r - 2)
+                and (g >= b + 7)
+                and (r >= b - 10)
             )
 
             if is_warm_earth:
-                earth_pixels += 1
-                patch_earth[p_idx] += 1
+                earth_total_pixels += 1
                 earth_r_sum += r
                 earth_g_sum += g
                 earth_b_sum += b
-            elif is_vegetation:
-                veg_pixels += 1
-                patch_veg[p_idx] += 1
+
+            if in_ground_zone:
+                ground_pixels += 1
+                ground_r_sum += r
+                ground_g_sum += g
+                ground_b_sum += b
+                if max(r, g, b) - min(r, g, b) < 9:
+                    ground_achromatic_pixels += 1
+                if (b > r + 8) or (b > g + 6):
+                    ground_blue_or_magenta_pixels += 1
+                if is_warm_earth:
+                    ground_earth_pixels += 1
+                elif is_vegetation:
+                    ground_veg_pixels += 1
 
             idx_l = row + (x - 1) * 3
             idx_r = row + (x + 1) * 3
@@ -141,86 +126,48 @@ def _extract_features(raw: bytes) -> dict:
             abs_gy = abs(gy)
             grad = math.sqrt(gx * gx + gy * gy)
             edge_energy += grad
-            patch_grad[p_idx] += grad
 
-            if grad < 3.0:
-                flat_pixels += 1
-
-            # Detectar orientacion de bordes: las casas/objetos tienen bordes rectos horizontales/verticales
             if abs_gx + abs_gy > 25.0:
                 if abs_gx > abs_gy * 3.0 or abs_gy > abs_gx * 3.0:
                     hv_edges += 1
                 elif abs(abs_gx - abs_gy) < (abs_gx + abs_gy) * 0.25:
                     diag_edges += 1
 
-            diff_l = int(r) - int(raw[idx_l])
-            diff_r = int(raw[idx_r]) - int(r)
-            if diff_l * diff_r < -4:
-                grain_flips += 1
-
     avg_r = sum_r / TOTAL_PIXELS
     avg_g = sum_g / TOTAL_PIXELS
     avg_b = sum_b / TOTAL_PIXELS
     norm_roughness = edge_energy / TOTAL_PIXELS
 
-    earth_ratio = earth_pixels / interior_pixels
-    veg_ratio = veg_pixels / interior_pixels
-    achromatic_ratio = achromatic_pixels / interior_pixels
-    sky_or_artificial_ratio = sky_or_artificial_pixels / interior_pixels
-    red_paint_ratio = red_paint_pixels / interior_pixels
-    flat_ratio = flat_pixels / interior_pixels
-    grain_ratio = grain_flips / interior_pixels
-    hv_diag_ratio = hv_edges / max(1, diag_edges)
-    top_g_minus_b = (top_g_sum - top_b_sum) / max(1, top_count)
-
-    valid_soil_patches = 0
-    valid_nature_patches = 0
-    smooth_patches = 0
-    total_patches = grid_n * grid_n
-    for i in range(total_patches):
-        cnt = max(1, patch_count[i])
-        p_rough = patch_grad[i] / cnt
-        p_earth = patch_earth[i] / cnt
-        p_nature = (patch_earth[i] + patch_veg[i]) / cnt
-        if p_rough < 9.5:
-            smooth_patches += 1
-        if p_rough >= 10.0 and p_earth >= 0.55:
-            valid_soil_patches += 1
-        if p_rough >= 9.5 and p_nature >= 0.50:
-            valid_nature_patches += 1
-
-    soil_patch_ratio = valid_soil_patches / total_patches
-    nature_patch_ratio = valid_nature_patches / total_patches
-    smooth_patch_ratio = smooth_patches / total_patches
+    g_cnt = max(1, ground_pixels)
+    ground_avg_r = ground_r_sum / g_cnt
+    ground_avg_g = ground_g_sum / g_cnt
+    ground_avg_b = ground_b_sum / g_cnt
 
     return {
         "avg_r": avg_r,
         "avg_g": avg_g,
         "avg_b": avg_b,
-        "earth_avg_r": (earth_r_sum / earth_pixels) if earth_pixels > 0 else avg_r,
-        "earth_avg_g": (earth_g_sum / earth_pixels) if earth_pixels > 0 else avg_g,
-        "earth_avg_b": (earth_b_sum / earth_pixels) if earth_pixels > 0 else avg_b,
+        "earth_avg_r": (earth_r_sum / earth_total_pixels) if earth_total_pixels > 0 else ground_avg_r,
+        "earth_avg_g": (earth_g_sum / earth_total_pixels) if earth_total_pixels > 0 else ground_avg_g,
+        "earth_avg_b": (earth_b_sum / earth_total_pixels) if earth_total_pixels > 0 else ground_avg_b,
+        "ground_avg_r": ground_avg_r,
+        "ground_avg_g": ground_avg_g,
+        "ground_avg_b": ground_avg_b,
         "norm_roughness": norm_roughness,
-        "earth_ratio": earth_ratio,
-        "veg_ratio": veg_ratio,
-        "achromatic_ratio": achromatic_ratio,
-        "sky_or_artificial_ratio": sky_or_artificial_ratio,
-        "red_paint_ratio": red_paint_ratio,
-        "flat_ratio": flat_ratio,
-        "grain_ratio": grain_ratio,
-        "hv_diag_ratio": hv_diag_ratio,
-        "top_g_minus_b": top_g_minus_b,
-        "soil_patch_ratio": soil_patch_ratio,
-        "nature_patch_ratio": nature_patch_ratio,
-        "smooth_patch_ratio": smooth_patch_ratio,
+        "ground_earth_ratio": ground_earth_pixels / g_cnt,
+        "ground_veg_ratio": ground_veg_pixels / g_cnt,
+        "ground_achromatic_ratio": ground_achromatic_pixels / g_cnt,
+        "ground_blue_ratio": ground_blue_or_magenta_pixels / g_cnt,
+        "red_paint_ratio": red_paint_pixels / interior_pixels,
+        "hv_diag_ratio": hv_edges / max(1, diag_edges),
     }
 
 
 def analyze_image(raw: bytes) -> dict:
     """Analiza una imagen RGB cruda (512x512x3) y devuelve el resultado completo:
-    - 'valid': suelo agricola limpio (Arenoso, Arcilloso o Limoso)
-    - 'monte': terreno cubierto de monte / maleza / vegetacion densa
-    - 'invalid': imagen que no corresponde a terreno (casa, habitacion, piso, objeto, etc.)
+    - 'valid': suelo agricola (Arenoso, Arcilloso o Limoso)
+    - 'monte': terreno cubierto de monte / maleza / vegetacion
+    - 'invalid': imagen ajena al campo (casa, habitacion, piso, objeto, etc.)
     """
     feat = _extract_features(raw)
     avg_r = feat["avg_r"]
@@ -228,27 +175,26 @@ def analyze_image(raw: bytes) -> dict:
     avg_b = feat["avg_b"]
     norm_roughness = feat["norm_roughness"]
 
-    # Descartar inmediatamente construcciones/escenas con cielo, pintura roja, lineas rectas H/V o fondos lisos
-    has_building_or_sky = (
-        feat["sky_or_artificial_ratio"] > 0.08
-        or feat["red_paint_ratio"] > 0.12
-        or feat["hv_diag_ratio"] > 3.5
-        or feat["top_g_minus_b"] < 4.0
+    ground_earth = feat["ground_earth_ratio"]
+    ground_veg = feat["ground_veg_ratio"]
+    ground_nature = ground_earth + ground_veg
+    ground_warmth = feat["ground_avg_r"] - feat["ground_avg_b"]
+
+    # Descartar construcciones (casas pintadas, habitaciones con lineas rectas H/V, pisos grises de cemento/ceramica, objetos azules)
+    is_artificial_scene = (
+        feat["red_paint_ratio"] > 0.25
+        or feat["ground_achromatic_ratio"] > 0.55
+        or feat["ground_blue_ratio"] > 0.25
+        or (feat["hv_diag_ratio"] > 3.8 and ground_earth < 0.72)
+        or norm_roughness < 3.5
+        or ground_nature < 0.35
     )
 
-    # Caso 1: Detectar Terreno con Monte / Abundante Vegetacion (maleza, arbustos, pastizal denso)
-    is_monte_terrain = (
-        not has_building_or_sky
-        and feat["veg_ratio"] >= 0.25
-        and (feat["veg_ratio"] + feat["earth_ratio"]) >= 0.48
-        and feat["achromatic_ratio"] <= 0.30
-        and norm_roughness >= 9.0
-        and feat["nature_patch_ratio"] >= 0.45
-        and feat["smooth_patch_ratio"] <= 0.35
-        and feat["earth_ratio"] < 0.55
-    )
+    if is_artificial_scene:
+        return _invalid_soil_response(avg_r, avg_g, avg_b, norm_roughness)
 
-    if is_monte_terrain:
+    # Caso 1: Terreno con Monte / Abundante Vegetacion
+    if ground_veg >= 0.28 and ground_veg > ground_earth * 0.85:
         return {
             "is_valid_soil": False,
             "soil_status": "monte",
@@ -263,34 +209,13 @@ def analyze_image(raw: bytes) -> dict:
             "roughness_index": round(float(norm_roughness), 4),
         }
 
-    # Caso 2: Validar Suelo Agricola Despejado
-    eval_r = feat["earth_avg_r"] if feat["veg_ratio"] >= 0.10 else avg_r
-    eval_g = feat["earth_avg_g"] if feat["veg_ratio"] >= 0.10 else avg_g
-    eval_b = feat["earth_avg_b"] if feat["veg_ratio"] >= 0.10 else avg_b
-
-    rgb_distances = [
-        math.sqrt((eval_r - p["r"]) ** 2 + (eval_g - p["g"]) ** 2 + (eval_b - p["b"]) ** 2)
-        for p in SOIL_PROFILES
-    ]
-    min_rgb_dist = min(rgb_distances)
-    color_warmth = eval_r - eval_b
-
-    is_valid_soil = (
-        not has_building_or_sky
-        and feat["earth_ratio"] >= 0.65
-        and feat["achromatic_ratio"] <= 0.25
-        and color_warmth >= 14.0
-        and (eval_r >= eval_g + 3.0)
-        and (eval_g >= eval_b + 5.0)
-        and norm_roughness >= 10.0
-        and feat["soil_patch_ratio"] >= 0.60
-        and feat["smooth_patch_ratio"] <= 0.22
-        and feat["grain_ratio"] >= 0.04
-        and min_rgb_dist <= 110.0
-    )
-
-    if not is_valid_soil:
+    # Caso 2: Suelo Agricola (usa el color promedio de los pixeles de tierra para no distorsionar si hay cielo o pasto arriba)
+    if ground_earth < 0.28 or ground_warmth < 5.5:
         return _invalid_soil_response(avg_r, avg_g, avg_b, norm_roughness)
+
+    eval_r = feat["earth_avg_r"]
+    eval_g = feat["earth_avg_g"]
+    eval_b = feat["earth_avg_b"]
 
     d_arenoso = math.sqrt(
         (eval_r - 210) ** 2 + (eval_g - 180) ** 2 + (eval_b - 140) ** 2 + (norm_roughness - 35) ** 2
