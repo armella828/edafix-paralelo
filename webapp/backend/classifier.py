@@ -257,12 +257,8 @@ def _invalid_soil_response(avg_r: float, avg_g: float, avg_b: float, norm_roughn
         "soil_index": -1,
         "soil_type": "Terreno No Apto / No es Suelo Agrícola",
         "recommended_crop": "No se puede sembrar en este suelo (la imagen no corresponde a tierra de cultivo)",
-        "avg_rgb": {
-            "r": round(float(avg_r), 2),
-            "g": round(float(avg_g), 2),
-            "b": round(float(avg_b), 2),
-        },
-        "roughness_index": round(float(norm_roughness), 4),
+        "avg_rgb": None,
+        "roughness_index": None,
     }
 
 

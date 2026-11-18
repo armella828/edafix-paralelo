@@ -111,10 +111,11 @@
           </div>
           <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
             <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Promedio RGB</p>
-            <p class="text-sm text-slate-200 mt-2 font-mono">
+            <p id="rgbValues" class="text-sm text-slate-200 mt-2 font-mono">
               R: <span id="avgR" class="text-white font-bold">0</span> · G: <span id="avgG"
                 class="text-white font-bold">0</span> · B: <span id="avgB" class="text-white font-bold">0</span>
             </p>
+            <p id="rgbInvalidMsg" class="hidden text-sm font-semibold text-slate-500 mt-2">No aplica (imagen no válida)</p>
           </div>
           <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
             <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Índice de rugosidad (Sobel)</p>
@@ -315,11 +316,26 @@
         resultFarmer.classList.remove('hidden');
         document.getElementById('soilType').textContent = data.soil_type || '—';
         document.getElementById('recommendedCrop').textContent = data.recommended_crop || '—';
-        document.getElementById('avgR').textContent = Number(data.avg_rgb?.r ?? 0).toFixed(2);
-        document.getElementById('avgG').textContent = Number(data.avg_rgb?.g ?? 0).toFixed(2);
-        document.getElementById('avgB').textContent = Number(data.avg_rgb?.b ?? 0).toFixed(2);
-        document.getElementById('roughness').textContent = Number(data.roughness_index ?? 0).toFixed(4);
         document.getElementById('responseTime').textContent = Number(data.response_time_ms ?? 0).toFixed(2) + ' ms';
+
+        const rgbValuesEl = document.getElementById('rgbValues');
+        const rgbInvalidMsgEl = document.getElementById('rgbInvalidMsg');
+        const roughnessEl = document.getElementById('roughness');
+
+        if (data.soil_status === 'invalid' || (data.is_valid_soil === false && data.soil_status !== 'monte')) {
+          rgbValuesEl.classList.add('hidden');
+          rgbInvalidMsgEl.classList.remove('hidden');
+          roughnessEl.textContent = 'No aplica (no es suelo)';
+          roughnessEl.className = 'text-base font-semibold text-slate-500 mt-2';
+        } else {
+          rgbValuesEl.classList.remove('hidden');
+          rgbInvalidMsgEl.classList.add('hidden');
+          document.getElementById('avgR').textContent = Number(data.avg_rgb?.r ?? 0).toFixed(2);
+          document.getElementById('avgG').textContent = Number(data.avg_rgb?.g ?? 0).toFixed(2);
+          document.getElementById('avgB').textContent = Number(data.avg_rgb?.b ?? 0).toFixed(2);
+          roughnessEl.textContent = Number(data.roughness_index ?? 0).toFixed(4);
+          roughnessEl.className = 'text-2xl font-extrabold text-amber-400 mt-2';
+        }
 
         // Badge visual por tipo de suelo
         const invalidAlert = document.getElementById('invalidSoilAlert');
