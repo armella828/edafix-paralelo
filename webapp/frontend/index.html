@@ -100,7 +100,7 @@
         <div id="monteSoilAlert" class="hidden mb-4 bg-amber-900/40 border border-amber-500 text-amber-200 rounded-xl p-4 text-sm font-medium">
           🌿 <strong>Terreno cubierto de monte o maleza:</strong> Se detectó abundante cobertura vegetal en el terreno. Antes de sembrar se requiere realizar <strong>desmonte / limpieza y preparación de suelo</strong> (o tomar la muestra sobre tierra despejada).
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
             <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Tipo de suelo</p>
             <p id="soilType" class="text-2xl font-extrabold text-emerald-300">—</p>
@@ -108,14 +108,6 @@
           <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
             <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Cultivo recomendado</p>
             <p id="recommendedCrop" class="text-lg font-bold text-amber-300 mt-2">—</p>
-          </div>
-          <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-            <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Promedio RGB</p>
-            <p id="rgbValues" class="text-sm text-slate-200 mt-2 font-mono">
-              R: <span id="avgR" class="text-white font-bold">0</span> · G: <span id="avgG"
-                class="text-white font-bold">0</span> · B: <span id="avgB" class="text-white font-bold">0</span>
-            </p>
-            <p id="rgbInvalidMsg" class="hidden text-sm font-semibold text-slate-500 mt-2">No aplica (imagen no válida)</p>
           </div>
           <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
             <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Índice de rugosidad (Sobel)</p>
@@ -318,21 +310,12 @@
         document.getElementById('recommendedCrop').textContent = data.recommended_crop || '—';
         document.getElementById('responseTime').textContent = Number(data.response_time_ms ?? 0).toFixed(2) + ' ms';
 
-        const rgbValuesEl = document.getElementById('rgbValues');
-        const rgbInvalidMsgEl = document.getElementById('rgbInvalidMsg');
         const roughnessEl = document.getElementById('roughness');
 
         if (data.soil_status === 'invalid' || (data.is_valid_soil === false && data.soil_status !== 'monte')) {
-          rgbValuesEl.classList.add('hidden');
-          rgbInvalidMsgEl.classList.remove('hidden');
           roughnessEl.textContent = 'No aplica (no es suelo)';
           roughnessEl.className = 'text-base font-semibold text-slate-500 mt-2';
         } else {
-          rgbValuesEl.classList.remove('hidden');
-          rgbInvalidMsgEl.classList.add('hidden');
-          document.getElementById('avgR').textContent = Number(data.avg_rgb?.r ?? 0).toFixed(2);
-          document.getElementById('avgG').textContent = Number(data.avg_rgb?.g ?? 0).toFixed(2);
-          document.getElementById('avgB').textContent = Number(data.avg_rgb?.b ?? 0).toFixed(2);
           roughnessEl.textContent = Number(data.roughness_index ?? 0).toFixed(4);
           roughnessEl.className = 'text-2xl font-extrabold text-amber-400 mt-2';
         }
