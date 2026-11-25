@@ -33,8 +33,9 @@
           <p class="text-xs text-slate-400 hidden sm:block">Clasificación Edafológica Paralela — Gran Chaco</p>
         </div>
       </div>
-      <span class="text-xs text-slate-400 bg-slate-800 border border-slate-700 px-3 py-1 rounded-full">API:
-        localhost:8000</span>
+      <span id="apiBadge"
+        class="text-xs text-slate-400 bg-slate-800 border border-slate-700 px-3 py-1 rounded-full">API:
+        conectando...</span>
     </div>
   </header>
 
@@ -54,69 +55,137 @@
     <!-- TAB 1: Modo Agricultor -->
     <section id="panel-farmer" data-tab-panel class="block">
       <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
-        <h2 class="text-lg font-bold text-emerald-300 mb-1">Análisis de Muestra de Suelo</h2>
-        <p class="text-sm text-slate-400 mb-5">Sube una imagen de suelo (.jpg / .png) para clasificar el tipo de suelo y
-          obtener el cultivo recomendado.</p>
+        <div class="flex flex-wrap items-start justify-between gap-2 mb-1">
+          <h2 class="text-lg font-bold text-emerald-300">Análisis de Muestras de Suelo</h2>
+          <span id="selectionCounter"
+            class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-300">
+            0 / 10 imágenes
+          </span>
+        </div>
+        <p class="text-sm text-slate-400 mb-5">Sube entre <strong>1 y 10 imágenes</strong> de suelo (.jpg / .png /
+          .webp) para analizarlas en paralelo, clasificar cada muestra y obtener el diagnóstico consolidado de la
+          parcela.</p>
+
+        <!-- Aviso límite -->
+        <div id="limitNotice"
+          class="hidden mb-4 bg-amber-900/40 border border-amber-500/70 text-amber-200 rounded-xl px-4 py-3 text-xs sm:text-sm font-medium">
+        </div>
 
         <!-- Dropzone -->
         <div id="dropzone"
-          class="border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer hover:border-emerald-500 transition bg-slate-900/60">
-          <input id="soilFile" type="file" accept="image/*" class="hidden" />
+          class="border-2 border-dashed border-slate-600 rounded-2xl p-6 sm:p-8 text-center cursor-pointer hover:border-emerald-500 transition bg-slate-900/60">
+          <input id="soilFile" type="file" accept="image/*" multiple class="hidden" />
           <div id="dropzoneContent">
             <div class="text-4xl mb-3">📸</div>
-            <p class="text-slate-300 font-medium">Arrastra y suelta tu imagen de suelo aquí</p>
-            <p class="text-slate-500 text-xs mt-1">o haz clic para seleccionar desde tu dispositivo</p>
+            <p class="text-slate-300 font-medium">Arrastra y suelta de 1 a 10 imágenes de suelo aquí</p>
+            <p class="text-slate-500 text-xs mt-1">o haz clic para seleccionar varias fotos desde tu dispositivo</p>
           </div>
-          <!-- Preview -->
-          <div id="previewContainer" class="hidden">
-            <img id="preview" alt="Vista previa suelo"
-              class="w-full max-h-80 object-cover rounded-xl border border-slate-700 mx-auto" />
-            <p class="text-slate-400 text-xs mt-2">Haz clic o arrastra otra imagen para cambiarla</p>
+          <!-- Galería de vista previa -->
+          <div id="previewContainer" class="hidden text-left">
+            <div id="previewGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3"></div>
+            <p class="text-slate-400 text-xs mt-3 text-center">Haz clic en el recuadro o arrastra más fotos para agregar
+              (máximo 10)</p>
           </div>
         </div>
 
         <div class="mt-5 flex flex-wrap gap-3">
-          <button id="btnAnalyze"
+          <button id="btnAnalyze" disabled
             class="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
-            🌿 Analizar Suelo en Clúster
+            🌿 Analizar Suelo en Paralelo
           </button>
-          <button id="btnChangePhoto" type="button"
+          <button id="btnAddMore" type="button"
             class="hidden w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold transition border border-slate-500">
-            📸 Subir otra foto
+            ➕ Agregar más fotos
           </button>
           <button id="btnResetPhoto" type="button"
             class="hidden w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-200 font-semibold transition border border-slate-700 hover:border-red-700">
-            🗑️ Limpiar
+            🗑️ Limpiar todo
           </button>
         </div>
       </div>
 
       <!-- Resultado -->
-      <div id="resultFarmer" class="hidden mt-6 bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
-        <h3 class="text-base font-bold text-emerald-300 mb-4">📋 Resultado del Análisis</h3>
-        <div id="invalidSoilAlert" class="hidden mb-4 bg-red-900/40 border border-red-600 text-red-200 rounded-xl p-4 text-sm font-medium">
-          ⚠️ <strong>No se puede sembrar en este suelo:</strong> La imagen subida no corresponde a una muestra de terreno agrícola apta (colores o texturas fuera del perfil edafológico).
-        </div>
-        <div id="monteSoilAlert" class="hidden mb-4 bg-amber-900/40 border border-amber-500 text-amber-200 rounded-xl p-4 text-sm font-medium">
-          🌿 <strong>Terreno cubierto de monte o maleza:</strong> Se detectó abundante cobertura vegetal en el terreno. Antes de sembrar se requiere realizar <strong>desmonte / limpieza y preparación de suelo</strong> (o tomar la muestra sobre tierra despejada).
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-            <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Tipo de suelo</p>
-            <p id="soilType" class="text-2xl font-extrabold text-emerald-300">—</p>
+      <div id="resultFarmer" class="hidden mt-6 space-y-6">
+        <!-- Resumen global (1 o varias imágenes) -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h3 id="resultHeading" class="text-base font-bold text-emerald-300">📋 Resultado del Análisis</h3>
+            <span id="executionModeBadge"
+              class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/70 text-emerald-300">
+              —
+            </span>
           </div>
-          <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-            <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Cultivo recomendado</p>
-            <p id="recommendedCrop" class="text-lg font-bold text-amber-300 mt-2">—</p>
+
+          <div id="invalidSoilAlert"
+            class="hidden mb-4 bg-red-900/40 border border-red-600 text-red-200 rounded-xl p-4 text-sm font-medium">
+            ⚠️ <strong>No se puede sembrar en este suelo:</strong> Las imágenes subidas no corresponden a muestras de
+            terreno agrícola aptas o presentan brillo/iluminación excesiva (no se calculan rugosidad ni humedad).
           </div>
-          <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-            <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Índice de rugosidad (Sobel)</p>
-            <p id="roughness" class="text-2xl font-extrabold text-amber-400 mt-2">—</p>
+          <div id="monteSoilAlert"
+            class="hidden mb-4 bg-amber-900/40 border border-amber-500 text-amber-200 rounded-xl p-4 text-sm font-medium">
+            🌿 <strong>Terreno cubierto de monte o maleza:</strong> Se detectó abundante cobertura vegetal en el
+            terreno. Antes de sembrar se requiere realizar <strong>desmonte / limpieza y preparación de suelo</strong>
+            (la humedad edáfica no se estima sobre follaje).
+          </div>
+          <div id="mixedBatchNote"
+            class="hidden mb-4 bg-sky-900/30 border border-sky-600/60 text-sky-200 rounded-xl p-3.5 text-xs sm:text-sm">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+              <p id="soilTypeLabel" class="text-xs uppercase tracking-wide text-slate-400 mb-1">Tipo de suelo</p>
+              <p id="soilType" class="text-2xl font-extrabold text-emerald-300">—</p>
+              <p id="soilDominanceMeta" class="hidden text-xs text-slate-400 mt-1"></p>
+            </div>
+            <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+              <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Cultivo recomendado</p>
+              <p id="recommendedCrop" class="text-lg font-bold text-amber-300 mt-2">—</p>
+            </div>
+            <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+              <p id="moistureLabel" class="text-xs uppercase tracking-wide text-slate-400 mb-1">Humedad superficial (est.)</p>
+              <p id="moistureLevel" class="text-xl font-extrabold text-sky-400 mt-2">—</p>
+              <div id="moistureBarWrap" class="hidden mt-2">
+                <div class="w-full bg-slate-800 rounded-full h-2 border border-slate-700 overflow-hidden">
+                  <div id="moistureBar" class="h-2 rounded-full transition-all duration-500 bg-sky-400" style="width: 0%"></div>
+                </div>
+                <p id="moistureAdvice" class="text-[11px] text-slate-400 mt-1.5 leading-snug"></p>
+              </div>
+            </div>
+            <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+              <p id="roughnessLabel" class="text-xs uppercase tracking-wide text-slate-400 mb-1">Índice de rugosidad
+                (Sobel)</p>
+              <p id="roughness" class="text-2xl font-extrabold text-amber-400 mt-2">—</p>
+            </div>
+          </div>
+
+          <p id="moistureOpticalNote" class="hidden mt-3 text-[11px] text-slate-400">
+            ℹ️ Estimación óptica sobre la capa superficial del suelo (sombras intensas o reflejos solares pueden influir en el valor).
+          </p>
+
+          <!-- Distribución de tipos en lote (visible cuando hay >1 imagen) -->
+          <div id="batchDistributionBox" class="hidden mt-4 bg-slate-900/70 rounded-xl p-4 border border-slate-700">
+            <p class="text-xs uppercase tracking-wide text-slate-400 mb-2.5">Distribución de muestras en la parcela</p>
+            <div id="batchDistributionPills" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Rendimiento y reparto paralelo -->
+          <div
+            class="mt-4 bg-slate-900/70 rounded-xl p-4 border border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <p class="text-xs uppercase tracking-wide text-slate-400">Tiempo total de análisis</p>
+              <p id="parallelMetaDetail" class="text-xs text-slate-400 mt-0.5"></p>
+            </div>
+            <p id="responseTime" class="text-xl font-extrabold text-emerald-400">—</p>
           </div>
         </div>
-        <div class="mt-4 bg-slate-900/70 rounded-xl p-4 border border-slate-700 flex items-center justify-between">
-          <p class="text-xs uppercase tracking-wide text-slate-400">Tiempo de respuesta</p>
-          <p id="responseTime" class="text-xl font-extrabold text-emerald-400">—</p>
+
+        <!-- Detalle individual por imagen (visible cuando hay >1 imagen) -->
+        <div id="batchDetailsSection" class="hidden bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-emerald-300">🖼️ Detalle Individual por Imagen</h3>
+            <span id="batchDetailsCount" class="text-xs text-slate-400"></span>
+          </div>
+          <div id="batchResultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
       </div>
     </section>
@@ -217,6 +286,16 @@
 
   <script>
     const API_BASE = window.location.port === "3000" ? ("http://" + window.location.hostname + ":8000") : "";
+    const MAX_IMAGES = 10;
+
+    // Indicador dinámico de entorno en header
+    const apiBadge = document.getElementById('apiBadge');
+    if (apiBadge) {
+      const host = window.location.hostname;
+      apiBadge.textContent = (host === 'localhost' || host === '127.0.0.1' || !host)
+        ? 'API: localhost:8000'
+        : ('API: ' + host);
+    }
 
     // ---------- Tabs ----------
     const tabs = document.querySelectorAll('[data-tab]');
@@ -236,120 +315,503 @@
       });
     });
 
-    // ---------- Tab 1: Analizar suelo ----------
+    // ---------- Tab 1: Analizar suelo (1 a 10 imágenes en paralelo) ----------
     const dropzone = document.getElementById('dropzone');
     const dropzoneContent = document.getElementById('dropzoneContent');
     const previewContainer = document.getElementById('previewContainer');
-    const preview = document.getElementById('preview');
+    const previewGrid = document.getElementById('previewGrid');
     const soilFile = document.getElementById('soilFile');
     const btnAnalyze = document.getElementById('btnAnalyze');
-    const btnChangePhoto = document.getElementById('btnChangePhoto');
+    const btnAddMore = document.getElementById('btnAddMore');
     const btnResetPhoto = document.getElementById('btnResetPhoto');
+    const selectionCounter = document.getElementById('selectionCounter');
+    const limitNotice = document.getElementById('limitNotice');
     const resultFarmer = document.getElementById('resultFarmer');
-    let selectedFile = null;
+
+    /** @type {{ id: string, file: File, url: string }[]} */
+    let selectedItems = [];
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function showLimitNotice(message) {
+      if (!message) {
+        limitNotice.classList.add('hidden');
+        limitNotice.textContent = '';
+        return;
+      }
+      limitNotice.textContent = message;
+      limitNotice.classList.remove('hidden');
+    }
+
+    function updateSelectionUI() {
+      const count = selectedItems.length;
+      selectionCounter.textContent = count + ' / ' + MAX_IMAGES + ' imágenes';
+      selectionCounter.className = count > 0
+        ? 'text-xs font-semibold px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700 text-emerald-300'
+        : 'text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-300';
+
+      if (count === 0) {
+        previewContainer.classList.add('hidden');
+        dropzoneContent.classList.remove('hidden');
+        btnAnalyze.disabled = true;
+        btnAnalyze.textContent = '🌿 Analizar Suelo en Paralelo';
+        btnAddMore.classList.add('hidden');
+        btnResetPhoto.classList.add('hidden');
+        previewGrid.innerHTML = '';
+        return;
+      }
+
+      dropzoneContent.classList.add('hidden');
+      previewContainer.classList.remove('hidden');
+      btnAnalyze.disabled = false;
+      btnAnalyze.textContent = count === 1
+        ? '🌿 Analizar 1 Imagen en Paralelo'
+        : '🌿 Analizar ' + count + ' Imágenes en Paralelo';
+      btnResetPhoto.classList.remove('hidden');
+
+      if (count < MAX_IMAGES) {
+        btnAddMore.classList.remove('hidden');
+      } else {
+        btnAddMore.classList.add('hidden');
+      }
+
+      previewGrid.className = count === 1
+        ? 'flex justify-center'
+        : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3';
+
+      previewGrid.innerHTML = selectedItems.map((item, idx) => {
+        const cardClass = count === 1
+          ? 'relative w-full max-w-md rounded-xl overflow-hidden border border-slate-700 bg-slate-950'
+          : 'relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 group';
+        const imgClass = count === 1
+          ? 'w-full max-h-72 object-cover'
+          : 'w-full h-28 object-cover';
+        return (
+          '<div class="' + cardClass + '">' +
+          '<img src="' + item.url + '" alt="Muestra ' + (idx + 1) + '" class="' + imgClass + '" />' +
+          '<span class="absolute top-1.5 left-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-900/85 text-emerald-300 border border-slate-700">#' + (idx + 1) + '</span>' +
+          '<button type="button" data-remove-id="' + item.id + '" title="Quitar imagen" ' +
+          'class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/85 hover:bg-red-600 text-slate-200 hover:text-white text-xs font-bold flex items-center justify-center border border-slate-600 transition">✕</button>' +
+          '<div class="px-2 py-1 text-[11px] text-slate-300 truncate bg-slate-900/90" title="' + escapeHtml(item.file.name) + '">' + escapeHtml(item.file.name) + '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    function addFiles(fileList) {
+      const incoming = Array.from(fileList || []).filter(f => !f.type || f.type.startsWith('image/'));
+      if (incoming.length === 0) {
+        showLimitNotice('⚠️ Solo se admiten archivos de imagen (.jpg, .png, .webp, .bmp).');
+        return;
+      }
+
+      const available = MAX_IMAGES - selectedItems.length;
+      if (available <= 0) {
+        showLimitNotice('⚠️ Ya alcanzaste el máximo de ' + MAX_IMAGES + ' imágenes. Quita alguna para agregar otra.');
+        return;
+      }
+
+      const toAdd = incoming.slice(0, available);
+      toAdd.forEach(file => {
+        selectedItems.push({
+          id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
+          file,
+          url: URL.createObjectURL(file),
+        });
+      });
+
+      if (incoming.length > available) {
+        showLimitNotice('⚠️ Se permite un máximo de ' + MAX_IMAGES + ' imágenes. Se agregaron ' + toAdd.length + ' de las ' + incoming.length + ' seleccionadas.');
+      } else {
+        showLimitNotice('');
+      }
+
+      resultFarmer.classList.add('hidden');
+      updateSelectionUI();
+    }
+
+    function clearSelection() {
+      selectedItems.forEach(item => URL.revokeObjectURL(item.url));
+      selectedItems = [];
+      soilFile.value = '';
+      showLimitNotice('');
+      resultFarmer.classList.add('hidden');
+      updateSelectionUI();
+    }
+
+    previewGrid.addEventListener('click', e => {
+      const btn = e.target.closest('[data-remove-id]');
+      if (!btn) return;
+      e.stopPropagation();
+      const id = btn.dataset.removeId;
+      const target = selectedItems.find(item => item.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      selectedItems = selectedItems.filter(item => item.id !== id);
+      showLimitNotice('');
+      resultFarmer.classList.add('hidden');
+      updateSelectionUI();
+    });
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
       dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
     });
+    dropzone.addEventListener('dragover', () => dropzone.classList.add('border-emerald-400', 'bg-emerald-950/20'));
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-emerald-400', 'bg-emerald-950/20'));
     dropzone.addEventListener('drop', e => {
-      e.preventDefault();
-      const file = e.dataTransfer.files && e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      dropzone.classList.remove('border-emerald-400', 'bg-emerald-950/20');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        addFiles(e.dataTransfer.files);
+      }
     });
     dropzone.addEventListener('click', () => {
+      if (selectedItems.length >= MAX_IMAGES) {
+        showLimitNotice('⚠️ Ya tienes ' + MAX_IMAGES + ' imágenes cargadas. Quita alguna si deseas agregar otra.');
+        return;
+      }
       soilFile.value = '';
       soilFile.click();
     });
-    soilFile.addEventListener('change', () => { if (soilFile.files[0]) handleFile(soilFile.files[0]); });
-
-    btnChangePhoto.addEventListener('click', () => {
+    soilFile.addEventListener('change', () => {
+      if (soilFile.files && soilFile.files.length > 0) addFiles(soilFile.files);
+    });
+    btnAddMore.addEventListener('click', () => {
       soilFile.value = '';
       soilFile.click();
     });
+    btnResetPhoto.addEventListener('click', clearSelection);
 
-    btnResetPhoto.addEventListener('click', () => {
-      selectedFile = null;
-      soilFile.value = '';
-      preview.src = '';
-      previewContainer.classList.add('hidden');
-      dropzoneContent.classList.remove('hidden');
-      resultFarmer.classList.add('hidden');
-      btnChangePhoto.classList.add('hidden');
-      btnResetPhoto.classList.add('hidden');
-    });
+    /**
+     * Redimensiona una imagen en el navegador a 512x512 JPEG (calidad 0.88) antes de enviarla.
+     * Evita exceder el límite de 4.5 MB de Vercel al subir hasta 10 fotos desde celular.
+     */
+    function prepareImageForUpload(file) {
+      return new Promise(resolve => {
+        const img = new Image();
+        const tmpUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              URL.revokeObjectURL(tmpUrl);
+              resolve(file);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, 512, 512);
+            canvas.toBlob(blob => {
+              URL.revokeObjectURL(tmpUrl);
+              if (blob && blob.size > 0) {
+                const baseName = file.name.replace(/\.[^.]+$/, '') || 'muestra';
+                resolve(new File([blob], baseName + '.jpg', { type: 'image/jpeg' }));
+              } else {
+                resolve(file);
+              }
+            }, 'image/jpeg', 0.88);
+          } catch (_) {
+            URL.revokeObjectURL(tmpUrl);
+            resolve(file);
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(tmpUrl);
+          resolve(file);
+        };
+        img.src = tmpUrl;
+      });
+    }
 
-    function handleFile(file) {
-      selectedFile = file;
-      const url = URL.createObjectURL(file);
-      preview.src = url;
-      previewContainer.classList.remove('hidden');
-      dropzoneContent.classList.add('hidden');
-      resultFarmer.classList.add('hidden');
-      btnAnalyze.disabled = false;
-      btnChangePhoto.classList.remove('hidden');
-      btnResetPhoto.classList.remove('hidden');
+    function getStatusStyle(status, soilType) {
+      if (status === 'monte') {
+        return {
+          text: 'text-amber-400',
+          crop: 'text-amber-200',
+          pill: 'bg-amber-900/50 border-amber-600 text-amber-200',
+        };
+      }
+      if (status === 'invalid' || status === 'error') {
+        return {
+          text: 'text-red-400',
+          crop: 'text-red-300',
+          pill: 'bg-red-900/50 border-red-600 text-red-200',
+        };
+      }
+      if (soilType === 'Arenoso') {
+        return {
+          text: 'text-emerald-400',
+          crop: 'text-amber-300',
+          pill: 'bg-emerald-900/50 border-emerald-600 text-emerald-200',
+        };
+      }
+      if (soilType === 'Arcilloso') {
+        return {
+          text: 'text-amber-400',
+          crop: 'text-amber-300',
+          pill: 'bg-orange-900/50 border-orange-600 text-orange-200',
+        };
+      }
+      return {
+        text: 'text-lime-400',
+        crop: 'text-amber-300',
+        pill: 'bg-lime-900/50 border-lime-600 text-lime-200',
+      };
+    }
+
+    function getMoistureStyle(level) {
+      if (level === 'Seco') {
+        return { text: 'text-amber-400', bar: 'bg-amber-400', icon: '🏜️' };
+      }
+      if (level === 'Húmedo / Saturado') {
+        return { text: 'text-blue-400', bar: 'bg-blue-500', icon: '🌊' };
+      }
+      return { text: 'text-sky-400', bar: 'bg-sky-400', icon: '💧' };
+    }
+
+    function renderAnalysisResponse(data, snapshotItems) {
+      const total = Number(data.total_images || 0);
+      const summary = data.summary || {};
+      const results = Array.isArray(data.results) ? data.results : [];
+      const isBatch = total > 1;
+
+      resultFarmer.classList.remove('hidden');
+
+      // Encabezado y badge de ejecución paralela
+      document.getElementById('resultHeading').textContent = isBatch
+        ? '📋 Diagnóstico Consolidado de la Parcela (' + total + ' imágenes)'
+        : '📋 Resultado del Análisis';
+
+      const modeBadge = document.getElementById('executionModeBadge');
+      const parallelDetail = document.getElementById('parallelMetaDetail');
+      if (data.execution_mode === 'cluster_mpi_openmp') {
+        modeBadge.textContent = '⚡ Clúster MPI + OpenMP (' + (data.cluster_nodes || 3) + ' nodos · ' + (data.omp_threads || 4) + ' hilos)';
+        const dist = data.node_distribution || {};
+        const distText = Object.entries(dist).map(([k, v]) => k + ': ' + v).join(' · ');
+        parallelDetail.textContent = 'Reparto en clúster (' + distText + ') · Tiempo MPI: ' + Number(data.cluster_time_ms ?? 0).toFixed(2) + ' ms';
+      } else {
+        modeBadge.textContent = '☁️ Procesamiento Paralelo (' + (data.workers_used || 1) + ' hilos · Serverless)';
+        parallelDetail.textContent = isBatch
+          ? 'Lote de ' + total + ' muestras procesado en paralelo (optimizado para Vercel)'
+          : 'Muestra procesada en el backend serverless';
+      }
+
+      document.getElementById('responseTime').textContent = Number(data.response_time_ms ?? 0).toFixed(2) + ' ms';
+
+      // Tarjetas principales (1 imagen o resumen global)
+      const primary = isBatch ? {
+        soil_status: summary.dominant_status,
+        is_valid_soil: summary.dominant_status === 'valid',
+        soil_type: summary.dominant_soil_type,
+        recommended_crop: summary.recommended_crop,
+        roughness_index: summary.avg_roughness_index,
+        moisture_index: summary.avg_moisture_index,
+        moisture_level: summary.dominant_moisture_level,
+        moisture_advice: summary.moisture_advice,
+        lighting_warning: summary.lighting_warning,
+      } : (results[0] || {});
+
+      document.getElementById('soilTypeLabel').textContent = isBatch ? 'Suelo predominante' : 'Tipo de suelo';
+      document.getElementById('moistureLabel').textContent = isBatch ? 'Humedad promedio (est.)' : 'Humedad superficial (est.)';
+      document.getElementById('roughnessLabel').textContent = isBatch ? 'Rugosidad promedio (Sobel)' : 'Índice de rugosidad (Sobel)';
+
+      const badge = document.getElementById('soilType');
+      const cropEl = document.getElementById('recommendedCrop');
+      const roughnessEl = document.getElementById('roughness');
+      const dominanceMeta = document.getElementById('soilDominanceMeta');
+      const moistureEl = document.getElementById('moistureLevel');
+      const moistureBarWrap = document.getElementById('moistureBarWrap');
+      const moistureBar = document.getElementById('moistureBar');
+      const moistureAdviceEl = document.getElementById('moistureAdvice');
+      const moistureNote = document.getElementById('moistureOpticalNote');
+
+      const style = getStatusStyle(primary.soil_status, primary.soil_type);
+      badge.textContent = primary.soil_type || '—';
+      badge.className = 'text-2xl font-extrabold mt-2 ' + style.text;
+      cropEl.textContent = primary.recommended_crop || '—';
+      cropEl.className = 'text-lg font-bold mt-2 ' + style.crop;
+
+      if (isBatch && summary.dominant_status === 'valid') {
+        dominanceMeta.textContent = summary.dominant_count + ' de ' + summary.valid_soil_count + ' muestras válidas (' + summary.dominant_percentage + '%)';
+        dominanceMeta.classList.remove('hidden');
+      } else {
+        dominanceMeta.classList.add('hidden');
+      }
+
+      // Humedad superficial estimada (solo para suelo agrícola válido)
+      if (primary.soil_status === 'valid' && primary.moisture_index !== null && primary.moisture_index !== undefined) {
+        const mStyle = getMoistureStyle(primary.moisture_level);
+        const pct = Math.max(0, Math.min(100, Number(primary.moisture_index)));
+        moistureEl.textContent = mStyle.icon + ' ' + primary.moisture_level + ' (' + pct.toFixed(0) + '%)';
+        moistureEl.className = 'text-xl font-extrabold mt-2 ' + mStyle.text;
+        moistureBar.style.width = pct + '%';
+        moistureBar.className = 'h-2 rounded-full transition-all duration-500 ' + mStyle.bar;
+        moistureAdviceEl.textContent = primary.moisture_advice || '';
+        moistureBarWrap.classList.remove('hidden');
+        moistureNote.textContent = primary.lighting_warning
+          ? '⚠️ Se detectaron reflejos/brillo parcial en la escena: la estimación óptica de humedad superficial puede variar según la iluminación.'
+          : 'ℹ️ Estimación óptica sobre la capa superficial del suelo (sombras intensas o reflejos solares pueden influir en el valor).';
+        moistureNote.className = primary.lighting_warning
+          ? 'mt-3 text-[11px] text-amber-300'
+          : 'mt-3 text-[11px] text-slate-400';
+      } else if (primary.soil_status === 'monte') {
+        moistureEl.textContent = 'No aplica (monte)';
+        moistureEl.className = 'text-base font-semibold text-slate-500 mt-2';
+        moistureBarWrap.classList.add('hidden');
+        moistureNote.classList.add('hidden');
+      } else {
+        moistureEl.textContent = 'No aplica (no es suelo)';
+        moistureEl.className = 'text-base font-semibold text-slate-500 mt-2';
+        moistureBarWrap.classList.add('hidden');
+        moistureNote.classList.add('hidden');
+      }
+
+      if (primary.soil_status === 'invalid' || primary.soil_status === 'error' || primary.roughness_index === null || primary.roughness_index === undefined) {
+        roughnessEl.textContent = 'No aplica (no es suelo)';
+        roughnessEl.className = 'text-base font-semibold text-slate-500 mt-2';
+      } else {
+        roughnessEl.textContent = Number(primary.roughness_index).toFixed(4);
+        roughnessEl.className = 'text-2xl font-extrabold text-amber-400 mt-2';
+      }
+
+      // Alertas globales
+      const invalidAlert = document.getElementById('invalidSoilAlert');
+      const monteAlert = document.getElementById('monteSoilAlert');
+      const mixedBatchNote = document.getElementById('mixedBatchNote');
+      invalidAlert.classList.add('hidden');
+      monteAlert.classList.add('hidden');
+      mixedBatchNote.classList.add('hidden');
+
+      if (primary.soil_status === 'monte') {
+        monteAlert.classList.remove('hidden');
+      } else if (primary.soil_status === 'invalid' || primary.soil_status === 'error') {
+        invalidAlert.classList.remove('hidden');
+      } else if (isBatch && ((summary.monte_count || 0) > 0 || (summary.invalid_count || 0) > 0 || (summary.error_count || 0) > 0)) {
+        const parts = [];
+        if (summary.monte_count > 0) parts.push(summary.monte_count + ' con monte/maleza');
+        if (summary.invalid_count > 0) parts.push(summary.invalid_count + ' no apta(s)');
+        if (summary.error_count > 0) parts.push(summary.error_count + ' con error de lectura');
+        mixedBatchNote.innerHTML = 'ℹ️ <strong>Nota de la parcela:</strong> El diagnóstico principal y la humedad promedio se calcularon solo con las <strong>' + summary.valid_soil_count + ' muestra(s) de suelo válido</strong>. También se detectaron ' + parts.join(' y ') + '.';
+        mixedBatchNote.classList.remove('hidden');
+      }
+
+      // Distribución y tarjetas individuales (solo si >1 imagen)
+      const distBox = document.getElementById('batchDistributionBox');
+      const distPills = document.getElementById('batchDistributionPills');
+      const detailsSection = document.getElementById('batchDetailsSection');
+      const detailsGrid = document.getElementById('batchResultsGrid');
+      const detailsCount = document.getElementById('batchDetailsCount');
+
+      if (!isBatch) {
+        distBox.classList.add('hidden');
+        detailsSection.classList.add('hidden');
+        return;
+      }
+
+      const counts = summary.counts_by_soil || {};
+      const pills = [
+        { label: 'Arenoso', count: counts.Arenoso || 0, cls: 'bg-emerald-900/50 border-emerald-600 text-emerald-200' },
+        { label: 'Arcilloso', count: counts.Arcilloso || 0, cls: 'bg-orange-900/50 border-orange-600 text-orange-200' },
+        { label: 'Limoso', count: counts.Limoso || 0, cls: 'bg-lime-900/50 border-lime-600 text-lime-200' },
+        { label: 'Monte / Vegetación', count: summary.monte_count || 0, cls: 'bg-amber-900/50 border-amber-600 text-amber-200' },
+        { label: 'No apto', count: (summary.invalid_count || 0) + (summary.error_count || 0), cls: 'bg-red-900/50 border-red-600 text-red-200' },
+      ].filter(p => p.count > 0);
+
+      distPills.innerHTML = pills.map(p =>
+        '<span class="text-xs font-semibold px-3 py-1.5 rounded-full border ' + p.cls + '">' + p.label + ': <strong>' + p.count + '</strong></span>'
+      ).join('');
+      distBox.classList.remove('hidden');
+
+      detailsCount.textContent = results.length + ' muestra(s) analizadas';
+      detailsGrid.innerHTML = results.map((item, idx) => {
+        const snap = snapshotItems[item.index] || snapshotItems[idx];
+        const thumbUrl = snap ? snap.url : '';
+        const st = getStatusStyle(item.soil_status, item.soil_type);
+        const showRoughness = item.soil_status !== 'invalid' && item.soil_status !== 'error' && item.roughness_index !== null && item.roughness_index !== undefined;
+        const roughText = showRoughness ? Number(item.roughness_index).toFixed(4) : 'No aplica';
+        const showMoisture = item.soil_status === 'valid' && item.moisture_index !== null && item.moisture_index !== undefined;
+        const mSt = showMoisture ? getMoistureStyle(item.moisture_level) : null;
+        const moistText = showMoisture
+          ? (mSt.icon + ' ' + escapeHtml(item.moisture_level) + ' (' + Number(item.moisture_index).toFixed(0) + '%)')
+          : 'No aplica';
+
+        return (
+          '<article class="bg-slate-900/80 border border-slate-700 rounded-xl overflow-hidden flex flex-col">' +
+          '<div class="relative h-36 bg-slate-950">' +
+          (thumbUrl ? '<img src="' + thumbUrl + '" alt="Muestra ' + (idx + 1) + '" class="w-full h-full object-cover" />' : '') +
+          '<span class="absolute top-2 left-2 text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-900/85 text-slate-200 border border-slate-700">#' + (idx + 1) + '</span>' +
+          '<span class="absolute bottom-2 right-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ' + st.pill + '">' + escapeHtml(item.soil_type) + '</span>' +
+          '</div>' +
+          '<div class="p-3.5 flex-1 flex flex-col justify-between gap-2">' +
+          '<div>' +
+          '<p class="text-xs text-slate-400 truncate mb-1" title="' + escapeHtml(item.filename) + '">' + escapeHtml(item.filename) + '</p>' +
+          '<p class="text-xs uppercase tracking-wide text-slate-500">Cultivo recomendado</p>' +
+          '<p class="text-sm font-semibold ' + st.crop + ' mt-0.5">' + escapeHtml(item.recommended_crop) + '</p>' +
+          '</div>' +
+          '<div class="pt-2 border-t border-slate-800 space-y-1.5 text-xs">' +
+          '<div class="flex items-center justify-between">' +
+          '<span class="text-slate-400">Humedad (est.)</span>' +
+          '<span class="font-semibold ' + (showMoisture ? mSt.text : 'text-slate-500') + '">' + moistText + '</span>' +
+          '</div>' +
+          '<div class="flex items-center justify-between">' +
+          '<span class="text-slate-400">Rugosidad (Sobel)</span>' +
+          '<span class="font-mono font-bold ' + (showRoughness ? 'text-amber-400' : 'text-slate-500') + '">' + roughText + '</span>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '</article>'
+        );
+      }).join('');
+      detailsSection.classList.remove('hidden');
     }
 
     btnAnalyze.addEventListener('click', async () => {
-      const file = selectedFile || soilFile.files[0];
-      if (!file) { alert('Selecciona o arrastra una imagen de suelo primero.'); return; }
+      if (selectedItems.length === 0) {
+        alert('Selecciona o arrastra entre 1 y 10 imágenes de suelo primero.');
+        return;
+      }
+
+      const snapshotItems = selectedItems.slice();
+      const count = snapshotItems.length;
       btnAnalyze.disabled = true;
-      btnAnalyze.textContent = '🌿 Analizando en clúster...';
+      btnAnalyze.textContent = count === 1
+        ? '🌿 Preparando y analizando imagen...'
+        : '🌿 Optimizando y analizando ' + count + ' imágenes en paralelo...';
 
       try {
+        // Redimensionar en paralelo a 512x512 en cliente para compatibilidad total con Vercel (<4.5 MB)
+        const preparedFiles = await Promise.all(snapshotItems.map(item => prepareImageForUpload(item.file)));
+
         const form = new FormData();
-        form.append('file', file);
-        const res = await fetch(API_BASE + '/api/analyze-single', { method: 'POST', body: form });
-        const data = await res.json();
+        preparedFiles.forEach((file, idx) => {
+          form.append('files', file, snapshotItems[idx].file.name || file.name);
+        });
+
+        const res = await fetch(API_BASE + '/api/analyze-batch', { method: 'POST', body: form });
+        let data;
+        try {
+          data = await res.json();
+        } catch (_) {
+          throw new Error('Respuesta inválida del servidor (HTTP ' + res.status + ')');
+        }
         if (!res.ok) {
           throw new Error(data.detail || ('Error HTTP ' + res.status));
         }
 
-        resultFarmer.classList.remove('hidden');
-        document.getElementById('soilType').textContent = data.soil_type || '—';
-        document.getElementById('recommendedCrop').textContent = data.recommended_crop || '—';
-        document.getElementById('responseTime').textContent = Number(data.response_time_ms ?? 0).toFixed(2) + ' ms';
-
-        const roughnessEl = document.getElementById('roughness');
-
-        if (data.soil_status === 'invalid' || (data.is_valid_soil === false && data.soil_status !== 'monte')) {
-          roughnessEl.textContent = 'No aplica (no es suelo)';
-          roughnessEl.className = 'text-base font-semibold text-slate-500 mt-2';
-        } else {
-          roughnessEl.textContent = Number(data.roughness_index ?? 0).toFixed(4);
-          roughnessEl.className = 'text-2xl font-extrabold text-amber-400 mt-2';
-        }
-
-        // Badge visual por tipo de suelo
-        const invalidAlert = document.getElementById('invalidSoilAlert');
-        const monteAlert = document.getElementById('monteSoilAlert');
-        const badge = document.getElementById('soilType');
-        const cropEl = document.getElementById('recommendedCrop');
-        badge.className = 'text-2xl font-extrabold mt-2';
-        cropEl.className = 'text-lg font-bold mt-2';
-        invalidAlert.classList.add('hidden');
-        monteAlert.classList.add('hidden');
-
-        if (data.soil_status === 'monte') {
-          monteAlert.classList.remove('hidden');
-          badge.classList.add('text-amber-400');
-          cropEl.classList.add('text-amber-200');
-        } else if (data.is_valid_soil === false) {
-          invalidAlert.classList.remove('hidden');
-          badge.classList.add('text-red-400');
-          cropEl.classList.add('text-red-300');
-        } else {
-          cropEl.classList.add('text-amber-300');
-          badge.classList.add(
-            data.soil_type === 'Arenoso' ? 'text-emerald-400' :
-              data.soil_type === 'Arcilloso' ? 'text-amber-400' : 'text-lime-400'
-          );
-        }
+        renderAnalysisResponse(data, snapshotItems);
       } catch (err) {
         alert('Error conectando con el backend: ' + (err.message || 'desconocido'));
       } finally {
-        btnAnalyze.disabled = false;
-        btnAnalyze.textContent = '🌿 Analizar Suelo en Clúster';
+        btnAnalyze.disabled = selectedItems.length === 0;
+        btnAnalyze.textContent = selectedItems.length <= 1
+          ? '🌿 Analizar ' + (selectedItems.length === 1 ? '1 Imagen' : 'Suelo') + ' en Paralelo'
+          : '🌿 Analizar ' + selectedItems.length + ' Imágenes en Paralelo';
       }
     });
 
@@ -363,8 +825,10 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Error al guardar muestra');
-        msgEl.textContent = '✅ Muestra guardada en data/dataset_suelos/' + label + ' (' + data.file + '). Volviendo a analizar...';
-        msgEl.classList.remove('hidden');
+        if (msgEl) {
+          msgEl.textContent = '✅ Muestra guardada en data/dataset_suelos/' + label + ' (' + data.file + '). Volviendo a analizar...';
+          msgEl.classList.remove('hidden');
+        }
         btnAnalyze.click();
       } catch (err) {
         alert('Error guardando en el dataset: ' + (err.message || 'desconocido'));

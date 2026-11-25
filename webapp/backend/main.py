@@ -1,12 +1,14 @@
 import csv
-import importlib
 import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,8 +23,8 @@ import classifier
 
 app = FastAPI(
     title="EDAFix API",
-    description="Backend para analisis edafologico: clasificacion individual y benchmark del cluster",
-    version="1.0.0",
+    description="Backend para analisis edafologico: clasificacion individual, por lotes (1-10) y benchmark del cluster",
+    version="1.1.0",
 )
 
 app.add_middleware(
@@ -38,11 +40,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SAMPLES_DIR = PROJECT_ROOT / "data" / "samples"
 BENCHMARK_CSV_PATH = PROJECT_ROOT / "data" / "resultados_benchmark.csv"
 USER_UPLOAD_PATH = SAMPLES_DIR / "user_upload.bin"
-CLUSTER_SLOT_PATH = SAMPLES_DIR / "soil_0000.bin"
 
 CONTAINER_NAME = "edafix-master"
+CLUSTER_NODES = ("master", "worker1", "worker2")
+CLUSTER_SLOT_LOCK = threading.Lock()
 DOCKER_TIMEOUT_SECONDS = 900
 RESIZE_SIZE = (512, 512)
+MAX_BATCH_IMAGES = 10
+BATCH_THREAD_WORKERS = 4
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 
 
@@ -138,43 +143,203 @@ def parse_seconds(output: str) -> float:
     return float(match.group())
 
 
-def run_quick_classification(raw: bytes, omp_threads: int = 1) -> float:
-    """Guarda temporalmente la imagen subida como .bin y ejecuta la clasificacion
-    rapida (una sola imagen) contra el contenedor edafix-master.
+def compute_node_distribution(num_images: int) -> dict[str, int]:
+    """Replica el reparto de carga de `src/parallel/edafix_par.cpp` entre los 3 nodos MPI."""
+    size = len(CLUSTER_NODES)
+    chunk = num_images // size
+    remainder = num_images % size
+    return {
+        node: chunk + (1 if rank < remainder else 0)
+        for rank, node in enumerate(CLUSTER_NODES)
+    }
 
-    El binario edafix_par lee los samples desde `data/samples/soil_NNNN.bin`,
-    por lo que la imagen subida se coloca temporalmente en el slot 0 y se
-    restaura el archivo original una vez terminada la ejecucion.
+
+def run_cluster_batch(raw_list: list[bytes], omp_threads: int = 4) -> float:
+    """Guarda temporalmente un lote (1-10 imagenes) como .bin y ejecuta la clasificacion
+    paralela hibrida (OpenMPI + OpenMP) contra los 3 nodos del contenedor edafix-master.
+
+    El binario edafix_par lee `data/samples/soil_0000.bin` .. `soil_{N-1:04d}.bin`,
+    por lo que se respaldan y restauran los slots originales sin alterar el dataset del benchmark.
     """
-    SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
-    USER_UPLOAD_PATH.write_bytes(raw)
+    if not raw_list:
+        return 0.0
 
-    backup = CLUSTER_SLOT_PATH.read_bytes() if CLUSTER_SLOT_PATH.exists() else None
+    num_images = len(raw_list)
+    with CLUSTER_SLOT_LOCK:
+        SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+        USER_UPLOAD_PATH.write_bytes(raw_list[0])
+
+        backups: list[tuple[Path, bytes | None]] = []
+        try:
+            for i, raw in enumerate(raw_list):
+                slot_path = SAMPLES_DIR / f"soil_{i:04d}.bin"
+                backups.append((slot_path, slot_path.read_bytes() if slot_path.exists() else None))
+                slot_path.write_bytes(raw)
+
+            output = run_docker_exec(
+                [
+                    "-e",
+                    f"OMP_NUM_THREADS={omp_threads}",
+                    CONTAINER_NAME,
+                    "mpirun",
+                    "--allow-run-as-root",
+                    "--hostfile",
+                    "infrastructure/hostfile",
+                    "--map-by",
+                    "node",
+                    "-np",
+                    str(len(CLUSTER_NODES)),
+                    "./edafix_par",
+                    str(num_images),
+                ]
+            )
+            return parse_seconds(output)
+        finally:
+            for slot_path, backup in backups:
+                if backup is not None:
+                    slot_path.write_bytes(backup)
+                else:
+                    slot_path.unlink(missing_ok=True)
+
+
+def run_quick_classification(raw: bytes, omp_threads: int = 1) -> float:
+    """Ejecuta la clasificacion rapida de una sola imagen en el cluster."""
+    return run_cluster_batch([raw], omp_threads=omp_threads)
+
+
+def _decode_and_analyze_one(index: int, filename: str, contents: bytes) -> dict[str, Any]:
+    """Decodifica, redimensiona a 512x512 RGB y analiza una imagen (seguro para hilos)."""
+    if not contents:
+        return {
+            "index": index,
+            "filename": filename,
+            "ok": False,
+            "error": "El archivo de imagen esta vacio",
+        }
+
     try:
-        CLUSTER_SLOT_PATH.write_bytes(raw)
-        output = run_docker_exec(
-            [
-                "-e",
-                f"OMP_NUM_THREADS={omp_threads}",
-                CONTAINER_NAME,
-                "mpirun",
-                "--allow-run-as-root",
-                "--hostfile",
-                "infrastructure/hostfile",
-                "--map-by",
-                "node",
-                "-np",
-                "3",
-                "./edafix_par",
-                "1",
-            ]
-        )
-        return parse_seconds(output)
-    finally:
-        if backup is not None:
-            CLUSTER_SLOT_PATH.write_bytes(backup)
+        with Image.open(BytesIO(contents)) as img:
+            image = img.convert("RGB")
+            if image.size != RESIZE_SIZE:
+                image = image.resize(RESIZE_SIZE)
+            raw = image.tobytes()
+    except Exception:
+        return {
+            "index": index,
+            "filename": filename,
+            "ok": False,
+            "error": "Formato de imagen no soportado (.jpg, .png, .webp, .jfif, .bmp)",
+        }
+
+    analysis = classifier.analyze_image(raw)
+    return {
+        "index": index,
+        "filename": filename,
+        "ok": True,
+        "raw": raw,
+        "result": {
+            "index": index,
+            "filename": filename,
+            "is_valid_soil": analysis.get("is_valid_soil", True),
+            "soil_status": analysis.get("soil_status", "valid"),
+            "soil_type": analysis["soil_type"],
+            "recommended_crop": analysis["recommended_crop"],
+            "avg_rgb": analysis["avg_rgb"],
+            "roughness_index": analysis["roughness_index"],
+            "moisture_index": analysis.get("moisture_index"),
+            "moisture_level": analysis.get("moisture_level"),
+            "moisture_advice": analysis.get("moisture_advice"),
+            "lighting_warning": analysis.get("lighting_warning", False),
+        },
+    }
+
+
+def _build_batch_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
+    """Consolida un diagnostico global de parcela a partir de los resultados individuales."""
+    counts_by_soil = {soil: 0 for soil in classifier.SOIL_TYPES}
+    valid_items: list[dict[str, Any]] = []
+    monte_items: list[dict[str, Any]] = []
+    invalid_items: list[dict[str, Any]] = []
+    error_items: list[dict[str, Any]] = []
+
+    for item in results:
+        status = item.get("soil_status")
+        if status == "valid":
+            valid_items.append(item)
+            soil_type = item.get("soil_type")
+            if soil_type in counts_by_soil:
+                counts_by_soil[soil_type] += 1
+        elif status == "monte":
+            monte_items.append(item)
+        elif status == "error":
+            error_items.append(item)
         else:
-            CLUSTER_SLOT_PATH.unlink(missing_ok=True)
+            invalid_items.append(item)
+
+    total_images = len(results)
+    profile_by_name = {p["soil_type"]: p for p in classifier.SOIL_PROFILES}
+
+    avg_moisture_index: float | None = None
+    dominant_moisture_level: str | None = None
+    moisture_advice: str | None = None
+    lighting_warning = any(bool(item.get("lighting_warning")) for item in valid_items)
+
+    if valid_items:
+        dominant_soil = max(classifier.SOIL_TYPES, key=lambda s: counts_by_soil[s])
+        dominant_count = counts_by_soil[dominant_soil]
+        dominant_percentage = round((dominant_count / len(valid_items)) * 100.0, 1)
+        recommended_crop = profile_by_name[dominant_soil]["crop"]
+        avg_roughness = round(
+            sum(float(item["roughness_index"]) for item in valid_items if item["roughness_index"] is not None)
+            / len(valid_items),
+            4,
+        )
+        moisture_vals = [float(item["moisture_index"]) for item in valid_items if item.get("moisture_index") is not None]
+        if moisture_vals:
+            avg_moisture_index = round(sum(moisture_vals) / len(moisture_vals), 1)
+            dominant_moisture_level, moisture_advice = classifier.classify_moisture_level(avg_moisture_index)
+        dominant_status = "valid"
+    elif monte_items:
+        dominant_soil = "Terreno con Monte / Cobertura Vegetal"
+        dominant_count = len(monte_items)
+        dominant_percentage = round((dominant_count / max(1, total_images - len(error_items))) * 100.0, 1)
+        recommended_crop = (
+            "Requiere desmonte y limpieza previa del terreno para sembrar "
+            "(o tomar muestras en tierra despejada)"
+        )
+        avg_roughness = round(
+            sum(float(item["roughness_index"]) for item in monte_items if item["roughness_index"] is not None)
+            / len(monte_items),
+            4,
+        )
+        moisture_advice = "No determinable por cobertura vegetal (tomar muestras sobre tierra despejada)"
+        dominant_status = "monte"
+    else:
+        dominant_soil = "Terreno No Apto / No es Suelo Agrícola"
+        dominant_count = 0
+        dominant_percentage = 0.0
+        recommended_crop = "No se puede sembrar en este suelo (las imágenes no corresponden a tierra de cultivo)"
+        avg_roughness = None
+        dominant_status = "invalid"
+
+    return {
+        "total_images": total_images,
+        "valid_soil_count": len(valid_items),
+        "monte_count": len(monte_items),
+        "invalid_count": len(invalid_items),
+        "error_count": len(error_items),
+        "counts_by_soil": counts_by_soil,
+        "dominant_status": dominant_status,
+        "dominant_soil_type": dominant_soil,
+        "dominant_count": dominant_count,
+        "dominant_percentage": dominant_percentage,
+        "recommended_crop": recommended_crop,
+        "avg_roughness_index": avg_roughness,
+        "avg_moisture_index": avg_moisture_index,
+        "dominant_moisture_level": dominant_moisture_level,
+        "moisture_advice": moisture_advice,
+        "lighting_warning": lighting_warning,
+    }
 
 
 @app.post("/api/analyze-single")
@@ -184,20 +349,12 @@ async def analyze_single(file: UploadFile = File(...)) -> dict:
     start_time = time.perf_counter()
 
     contents = await file.read()
-    if not contents:
-        raise HTTPException(status_code=400, detail="El archivo de imagen esta vacio")
+    decoded = _decode_and_analyze_one(0, file.filename or "imagen.jpg", contents)
+    if not decoded["ok"]:
+        raise HTTPException(status_code=400, detail=decoded["error"])
 
-    try:
-        image = Image.open(BytesIO(contents)).convert("RGB").resize(RESIZE_SIZE)
-    except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail="Formato de imagen no soportado. Use una imagen valida (.jpg, .png, .webp, .jfif, .bmp)",
-        )
-    raw = image.tobytes()  # 512 x 512 x 3 bytes, formato RGB crudo
-
-    importlib.reload(classifier)
-    analysis = classifier.analyze_image(raw)
+    raw = decoded["raw"]
+    analysis = decoded["result"]
 
     # Ejecutar la clasificacion contra el contenedor edafix-master si el cluster Docker esta activo
     if is_docker_cluster_ready():
@@ -212,13 +369,118 @@ async def analyze_single(file: UploadFile = File(...)) -> dict:
     elapsed_ms = (time.perf_counter() - start_time) * 1000
 
     return {
-        "is_valid_soil": analysis.get("is_valid_soil", True),
-        "soil_status": analysis.get("soil_status", "valid"),
+        "is_valid_soil": analysis["is_valid_soil"],
+        "soil_status": analysis["soil_status"],
         "soil_type": analysis["soil_type"],
         "recommended_crop": analysis["recommended_crop"],
         "avg_rgb": analysis["avg_rgb"],
         "roughness_index": analysis["roughness_index"],
+        "moisture_index": analysis["moisture_index"],
+        "moisture_level": analysis["moisture_level"],
+        "moisture_advice": analysis["moisture_advice"],
+        "lighting_warning": analysis["lighting_warning"],
         "response_time_ms": round(elapsed_ms, 3),
+    }
+
+
+@app.post("/api/analyze-batch")
+async def analyze_batch(files: list[UploadFile] = File(...)) -> dict:
+    """Analiza en paralelo un lote de 1 a 10 imagenes de suelo.
+
+    - En local con Docker activo: distribuye el lote en el cluster hibrido OpenMPI (3 nodos) + OpenMP.
+    - En Vercel Serverless (sin Docker): procesa el lote en paralelo con ThreadPoolExecutor (seguro sin /dev/shm).
+    """
+    start_time = time.perf_counter()
+
+    if not files:
+        raise HTTPException(status_code=400, detail="Debes subir al menos 1 imagen para analizar.")
+    if len(files) > MAX_BATCH_IMAGES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Se permite un maximo de {MAX_BATCH_IMAGES} imagenes por analisis.",
+        )
+
+    payloads: list[tuple[int, str, bytes]] = []
+    for idx, upload in enumerate(files):
+        filename = upload.filename or f"muestra_{idx + 1}.jpg"
+        data = await upload.read()
+        payloads.append((idx, filename, data))
+
+    workers = min(len(payloads), BATCH_THREAD_WORKERS)
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            processed = list(executor.map(lambda p: _decode_and_analyze_one(*p), payloads))
+    else:
+        processed = [_decode_and_analyze_one(*payloads[0])]
+
+    processed.sort(key=lambda item: item["index"])
+
+    valid_raws: list[bytes] = []
+    results: list[dict[str, Any]] = []
+    for item in processed:
+        if item["ok"]:
+            valid_raws.append(item["raw"])
+            results.append(item["result"])
+        else:
+            results.append(
+                {
+                    "index": item["index"],
+                    "filename": item["filename"],
+                    "is_valid_soil": False,
+                    "soil_status": "error",
+                    "soil_type": "Imagen no válida / error de lectura",
+                    "recommended_crop": item["error"],
+                    "avg_rgb": None,
+                    "roughness_index": None,
+                    "moisture_index": None,
+                    "moisture_level": None,
+                    "moisture_advice": None,
+                    "lighting_warning": False,
+                }
+            )
+
+    if not valid_raws:
+        raise HTTPException(
+            status_code=400,
+            detail="Ninguna de las imagenes subidas pudo procesarse. Usa formatos validos (.jpg, .png, .webp).",
+        )
+
+    cluster_time_ms: float | None = None
+    node_distribution: dict[str, int] | None = None
+
+    if is_docker_cluster_ready():
+        omp_threads = min(4, max(1, len(valid_raws)))
+        cluster_seconds = run_cluster_batch(valid_raws, omp_threads=omp_threads)
+        cluster_time_ms = round(cluster_seconds * 1000.0, 3)
+        node_distribution = compute_node_distribution(len(valid_raws))
+        execution_mode = "cluster_mpi_openmp"
+        cluster_nodes = len(CLUSTER_NODES)
+        workers_used = cluster_nodes * omp_threads
+    else:
+        try:
+            SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+            USER_UPLOAD_PATH.write_bytes(valid_raws[0])
+        except OSError:
+            pass
+        omp_threads = workers
+        execution_mode = "serverless_parallel"
+        cluster_nodes = 1
+        workers_used = workers
+
+    summary = _build_batch_summary(results)
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+
+    return {
+        "total_images": len(results),
+        "execution_mode": execution_mode,
+        "cluster_nodes": cluster_nodes,
+        "omp_threads": omp_threads,
+        "workers_used": workers_used,
+        "node_distribution": node_distribution,
+        "cluster_time_ms": cluster_time_ms,
+        "response_time_ms": round(elapsed_ms, 3),
+        "summary": summary,
+        "results": results,
     }
 
 
