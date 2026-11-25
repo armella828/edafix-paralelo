@@ -174,10 +174,13 @@
           class="hidden mb-4 bg-red-500/10 border border-red-500/40 text-red-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-medium">
         </div>
 
+        <!-- Inputs nativos de selección múltiple (fuera del dropzone para evitar doble apertura) -->
+        <input id="soilFile" type="file" accept="image/jpeg,image/png,image/webp,image/bmp,image/*" multiple="multiple" class="hidden" />
+        <input id="soilFolder" type="file" webkitdirectory directory multiple="multiple" class="hidden" />
+
         <!-- Dropzone (Arrastrar + Botón Cargar) -->
         <div id="dropzone"
           class="group relative border-2 border-dashed border-slate-700/90 hover:border-emerald-400/70 rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition-all bg-slate-950/60 hover:bg-emerald-950/15">
-          <input id="soilFile" type="file" accept="image/*" multiple class="hidden" />
 
           <div id="dropzoneContent" class="py-2">
             <div
@@ -189,22 +192,34 @@
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
             </div>
-            <p class="text-slate-100 font-semibold text-base">Arrastra y suelta tus imágenes de suelo aquí</p>
-            <p class="text-slate-400 text-xs sm:text-sm mt-1">o selecciona de 1 a 10 fotos directamente desde tu dispositivo</p>
+            <p class="text-slate-100 font-semibold text-base">Arrastra y suelta de 1 a 10 imágenes de suelo aquí</p>
+            <p class="text-slate-400 text-xs sm:text-sm mt-1">o carga varias fotos a la vez desde tu dispositivo o desde una carpeta</p>
 
-            <div class="mt-4">
-              <button id="btnDropzoneUpload" type="button"
-                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 font-semibold text-sm border border-emerald-400/40 shadow-md transition">
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+              <label id="btnDropzoneUpload" for="soilFile"
+                class="cursor-pointer inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 font-semibold text-sm border border-emerald-400/40 shadow-md transition">
                 <svg class="w-4 h-4 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-                Cargar imágenes
-              </button>
+                Cargar varias imágenes
+              </label>
+
+              <label id="btnDropzoneFolder" for="soilFolder"
+                class="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-semibold text-sm border border-white/15 transition">
+                <svg class="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                Elegir de carpeta
+              </label>
             </div>
 
-            <div class="flex flex-wrap items-center justify-center gap-2 mt-4">
+            <p class="text-[11px] text-slate-400 mt-3">
+              💡 Para elegir varias a la vez: en PC usa <strong class="text-slate-300">Ctrl + clic</strong> (o arrastra un recuadro), y en celular mantén presionado o marca varias. Con <strong class="text-slate-300">Elegir de carpeta</strong> puedes marcarlas con 1 clic.
+            </p>
+
+            <div class="flex flex-wrap items-center justify-center gap-2 mt-3.5">
               <span class="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">JPG · PNG · WEBP</span>
               <span class="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">Auto-optimizado 512×512</span>
               <span class="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">Filtro anti-brillo y no-suelo</span>
@@ -222,15 +237,23 @@
 
         <!-- Botones de acción (ambas opciones siempre claras) -->
         <div class="mt-5 flex flex-wrap items-center gap-3">
-          <button id="btnAddMore" type="button"
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-slate-100 font-semibold text-sm transition border border-white/15">
+          <label id="btnAddMore" for="soilFile"
+            class="cursor-pointer w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-slate-100 font-semibold text-sm transition border border-white/15">
             <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <span id="btnAddMoreLabel">Cargar imágenes</span>
-          </button>
+          </label>
+
+          <label id="btnPickFolder" for="soilFolder"
+            class="cursor-pointer w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.11] text-slate-200 font-semibold text-sm transition border border-white/10">
+            <svg class="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+            Elegir de carpeta
+          </label>
 
           <button id="btnAnalyze" disabled
             class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-emerald-950/60 disabled:opacity-40 disabled:cursor-not-allowed">
@@ -246,6 +269,54 @@
             class="hidden w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-transparent hover:bg-red-500/15 text-slate-400 hover:text-red-300 font-semibold text-sm transition border border-white/10 hover:border-red-500/40 sm:ml-auto">
             Limpiar todo
           </button>
+        </div>
+      </div>
+
+      <!-- Modal selector visual (1 clic por imagen, sin Ctrl, al elegir carpeta o >10 fotos) -->
+      <div id="pickerModal"
+        class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card border border-white/15 rounded-3xl w-full max-w-4xl max-h-[88vh] flex flex-col shadow-2xl shadow-black/70 overflow-hidden">
+          <div class="px-5 sm:px-6 py-4 border-b border-white/10 flex items-center justify-between gap-3">
+            <div>
+              <h3 class="font-display text-base sm:text-lg font-bold text-white">Selecciona las imágenes a analizar</h3>
+              <p id="pickerModalSub" class="text-xs text-slate-400 mt-0.5">Haz clic en cada foto que quieras incluir (máximo 10 en total).</p>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span id="pickerModalCounter"
+                class="text-xs font-mono font-semibold px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-300">
+                0 seleccionadas
+              </span>
+              <button id="btnPickerClose" type="button"
+                class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 font-bold transition">✕</button>
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5 overflow-y-auto flex-1">
+            <div id="pickerModalGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+          </div>
+
+          <div class="px-5 sm:px-6 py-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 bg-slate-950/60">
+            <div class="flex items-center gap-2">
+              <button id="btnPickerSelectAll" type="button"
+                class="text-xs font-semibold px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 transition">
+                Marcar hasta límite
+              </button>
+              <button id="btnPickerClear" type="button"
+                class="text-xs font-semibold px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 border border-white/10 transition">
+                Desmarcar todo
+              </button>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <button id="btnPickerCancel" type="button"
+                class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-semibold text-sm border border-white/10 transition">
+                Cancelar
+              </button>
+              <button id="btnPickerConfirm" type="button" disabled
+                class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm transition disabled:opacity-40 disabled:cursor-not-allowed">
+                Agregar seleccionadas
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -597,7 +668,7 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=2"></script>
+  <script src="/app.js?v=3"></script>
 </body>
 
 </html>

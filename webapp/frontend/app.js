@@ -36,13 +36,25 @@ const dropzoneContent = document.getElementById('dropzoneContent');
 const previewContainer = document.getElementById('previewContainer');
 const previewGrid = document.getElementById('previewGrid');
 const soilFile = document.getElementById('soilFile');
+const soilFolder = document.getElementById('soilFolder');
 const btnDropzoneUpload = document.getElementById('btnDropzoneUpload');
+const btnDropzoneFolder = document.getElementById('btnDropzoneFolder');
 const btnAnalyze = document.getElementById('btnAnalyze');
 const btnAnalyzeIcon = document.getElementById('btnAnalyzeIcon');
 const btnAnalyzeLabel = document.getElementById('btnAnalyzeLabel');
 const btnAddMore = document.getElementById('btnAddMore');
 const btnAddMoreLabel = document.getElementById('btnAddMoreLabel');
+const btnPickFolder = document.getElementById('btnPickFolder');
 const btnResetPhoto = document.getElementById('btnResetPhoto');
+const pickerModal = document.getElementById('pickerModal');
+const pickerModalSub = document.getElementById('pickerModalSub');
+const pickerModalCounter = document.getElementById('pickerModalCounter');
+const pickerModalGrid = document.getElementById('pickerModalGrid');
+const btnPickerClose = document.getElementById('btnPickerClose');
+const btnPickerCancel = document.getElementById('btnPickerCancel');
+const btnPickerConfirm = document.getElementById('btnPickerConfirm');
+const btnPickerSelectAll = document.getElementById('btnPickerSelectAll');
+const btnPickerClear = document.getElementById('btnPickerClear');
 const selectionCounter = document.getElementById('selectionCounter');
 const selectionProgressBar = document.getElementById('selectionProgressBar');
 const limitNotice = document.getElementById('limitNotice');
@@ -122,6 +134,7 @@ function updateSelectionUI() {
     btnAnalyzeLabel.textContent = 'Analizar Suelo en Paralelo';
     btnAddMore.classList.remove('hidden');
     btnAddMoreLabel.textContent = 'Cargar imágenes';
+    btnPickFolder.classList.remove('hidden');
     btnResetPhoto.classList.add('hidden');
     previewGrid.innerHTML = '';
     return;
@@ -139,8 +152,10 @@ function updateSelectionUI() {
   if (count < MAX_IMAGES) {
     btnAddMore.classList.remove('hidden');
     btnAddMoreLabel.textContent = 'Cargar más fotos';
+    btnPickFolder.classList.remove('hidden');
   } else {
     btnAddMore.classList.add('hidden');
+    btnPickFolder.classList.add('hidden');
   }
 
   previewGrid.className = count === 1
@@ -169,17 +184,122 @@ function updateSelectionUI() {
   }).join('');
 }
 
-function addFiles(fileList) {
+let pickerCandidates = [];
+let pickerSelectedSet = new Set();
+
+function closePickerModal() {
+  pickerCandidates.forEach(c => URL.revokeObjectURL(c.url));
+  pickerCandidates = [];
+  pickerSelectedSet.clear();
+  pickerModalGrid.innerHTML = '';
+  pickerModal.classList.add('hidden');
+}
+
+function renderPickerModal() {
+  const available = MAX_IMAGES - selectedItems.length;
+  const chosen = pickerSelectedSet.size;
+  pickerModalSub.textContent = 'Haz clic en las fotos que quieras incluir (puedes elegir hasta ' + available + ' imagen' + (available === 1 ? '' : 'es') + ' más).';
+  pickerModalCounter.textContent = chosen + ' / ' + available + ' seleccionadas';
+  btnPickerConfirm.disabled = chosen === 0;
+  btnPickerConfirm.textContent = chosen > 0 ? ('Agregar ' + chosen + ' imagen' + (chosen === 1 ? '' : 'es')) : 'Agregar seleccionadas';
+
+  pickerModalGrid.innerHTML = pickerCandidates.map((item, idx) => {
+    const isChecked = pickerSelectedSet.has(idx);
+    const borderCls = isChecked
+      ? 'border-emerald-400 ring-2 ring-emerald-400/50 bg-emerald-950/30'
+      : 'border-white/10 hover:border-white/30 bg-slate-950/80';
+    const checkCls = isChecked
+      ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+      : 'bg-slate-950/80 text-transparent border-white/30';
+    return (
+      '<button type="button" data-pick-idx="' + idx + '" class="text-left rounded-xl overflow-hidden border transition relative group ' + borderCls + '">' +
+      '<div class="relative h-28 bg-slate-950 overflow-hidden">' +
+      '<img src="' + item.url + '" alt="' + escapeHtml(item.file.name) + '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />' +
+      '<span class="absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-extrabold transition ' + checkCls + '">✓</span>' +
+      '</div>' +
+      '<div class="px-2.5 py-1.5 text-[11px] text-slate-200 truncate" title="' + escapeHtml(item.file.name) + '">' + escapeHtml(item.file.name) + '</div>' +
+      '</button>'
+    );
+  }).join('');
+}
+
+function openPickerModal(imageFiles) {
+  const available = MAX_IMAGES - selectedItems.length;
+  if (available <= 0) {
+    showLimitNotice('⚠️ Ya alcanzaste el máximo de ' + MAX_IMAGES + ' imágenes. Quita alguna para agregar otra.');
+    return;
+  }
+  closePickerModal();
+  pickerCandidates = imageFiles.map(file => ({ file, url: URL.createObjectURL(file) }));
+  pickerSelectedSet = new Set();
+  renderPickerModal();
+  pickerModal.classList.remove('hidden');
+}
+
+pickerModalGrid.addEventListener('click', e => {
+  const card = e.target.closest('[data-pick-idx]');
+  if (!card) return;
+  const idx = Number(card.dataset.pickIdx);
+  const available = MAX_IMAGES - selectedItems.length;
+  if (pickerSelectedSet.has(idx)) {
+    pickerSelectedSet.delete(idx);
+  } else {
+    if (pickerSelectedSet.size >= available) {
+      showLimitNotice('⚠️ Solo puedes marcar hasta ' + available + ' imagen(es) más (máximo 10 en total).');
+      return;
+    }
+    pickerSelectedSet.add(idx);
+  }
+  renderPickerModal();
+});
+
+btnPickerSelectAll.addEventListener('click', () => {
+  const available = MAX_IMAGES - selectedItems.length;
+  pickerSelectedSet = new Set();
+  for (let i = 0; i < Math.min(available, pickerCandidates.length); i++) {
+    pickerSelectedSet.add(i);
+  }
+  renderPickerModal();
+});
+
+btnPickerClear.addEventListener('click', () => {
+  pickerSelectedSet.clear();
+  renderPickerModal();
+});
+
+btnPickerConfirm.addEventListener('click', () => {
+  const chosenFiles = Array.from(pickerSelectedSet)
+    .sort((a, b) => a - b)
+    .map(i => pickerCandidates[i].file);
+  closePickerModal();
+  if (chosenFiles.length > 0) {
+    addFiles(chosenFiles, false);
+  }
+});
+
+btnPickerClose.addEventListener('click', closePickerModal);
+btnPickerCancel.addEventListener('click', closePickerModal);
+
+function addFiles(fileList, allowModalOnOverflow = true) {
   showFarmerError('');
-  const incoming = Array.from(fileList || []).filter(f => !f.type || f.type.startsWith('image/'));
+  const incoming = Array.from(fileList || []).filter(f => {
+    if (f.type && f.type.startsWith('image/')) return true;
+    return /\.(jpe?g|png|webp|bmp|jfif)$/i.test(f.name || '');
+  });
   if (incoming.length === 0) {
-    showLimitNotice('⚠️ Solo se admiten archivos de imagen (.jpg, .png, .webp, .bmp).');
+    showLimitNotice('⚠️ No se encontraron archivos de imagen válidos (.jpg, .png, .webp, .bmp).');
     return;
   }
 
   const available = MAX_IMAGES - selectedItems.length;
   if (available <= 0) {
     showLimitNotice('⚠️ Ya alcanzaste el máximo de ' + MAX_IMAGES + ' imágenes. Quita alguna para agregar otra.');
+    return;
+  }
+
+  // Si seleccionó más imágenes que el cupo disponible, abrir selector visual con 1 clic
+  if (allowModalOnOverflow && incoming.length > available) {
+    openPickerModal(incoming);
     return;
   }
 
@@ -192,12 +312,7 @@ function addFiles(fileList) {
     });
   });
 
-  if (incoming.length > available) {
-    showLimitNotice('⚠️ Se permite un máximo de ' + MAX_IMAGES + ' imágenes. Se agregaron ' + toAdd.length + ' de las ' + incoming.length + ' seleccionadas.');
-  } else {
-    showLimitNotice('');
-  }
-
+  showLimitNotice('');
   resultFarmer.classList.add('hidden');
   updateSelectionUI();
 }
@@ -206,6 +321,7 @@ function clearSelection() {
   selectedItems.forEach(item => URL.revokeObjectURL(item.url));
   selectedItems = [];
   soilFile.value = '';
+  soilFolder.value = '';
   showLimitNotice('');
   showFarmerError('');
   resultFarmer.classList.add('hidden');
@@ -237,15 +353,59 @@ dropzone.addEventListener('drop', e => {
     addFiles(e.dataTransfer.files);
   }
 });
-dropzone.addEventListener('click', openFilePicker);
+
+// Evitar doble disparo cuando se hace clic en <label> dentro del dropzone
 btnDropzoneUpload.addEventListener('click', e => {
   e.stopPropagation();
+  if (selectedItems.length >= MAX_IMAGES) {
+    e.preventDefault();
+    showLimitNotice('⚠️ Ya tienes ' + MAX_IMAGES + ' imágenes cargadas. Quita alguna si deseas agregar otra.');
+  }
+});
+btnDropzoneFolder.addEventListener('click', e => {
+  e.stopPropagation();
+  if (selectedItems.length >= MAX_IMAGES) {
+    e.preventDefault();
+    showLimitNotice('⚠️ Ya tienes ' + MAX_IMAGES + ' imágenes cargadas. Quita alguna si deseas agregar otra.');
+  }
+});
+btnAddMore.addEventListener('click', e => {
+  if (selectedItems.length >= MAX_IMAGES) {
+    e.preventDefault();
+    showLimitNotice('⚠️ Ya tienes ' + MAX_IMAGES + ' imágenes cargadas. Quita alguna si deseas agregar otra.');
+  }
+});
+btnPickFolder.addEventListener('click', e => {
+  if (selectedItems.length >= MAX_IMAGES) {
+    e.preventDefault();
+    showLimitNotice('⚠️ Ya tienes ' + MAX_IMAGES + ' imágenes cargadas. Quita alguna si deseas agregar otra.');
+  }
+});
+
+dropzone.addEventListener('click', e => {
+  if (e.target.closest('label') || e.target.closest('button')) return;
   openFilePicker();
 });
-btnAddMore.addEventListener('click', openFilePicker);
+
 soilFile.addEventListener('change', () => {
-  if (soilFile.files && soilFile.files.length > 0) addFiles(soilFile.files);
+  const picked = Array.from(soilFile.files || []);
+  soilFile.value = '';
+  if (picked.length > 0) addFiles(picked);
 });
+
+soilFolder.addEventListener('change', () => {
+  const picked = Array.from(soilFolder.files || []).filter(f => {
+    if (f.type && f.type.startsWith('image/')) return true;
+    return /\.(jpe?g|png|webp|bmp|jfif)$/i.test(f.name || '');
+  });
+  soilFolder.value = '';
+  if (picked.length === 0) {
+    showLimitNotice('⚠️ No se encontraron imágenes válidas dentro de esa carpeta.');
+    return;
+  }
+  openPickerModal(picked);
+});
+
 btnResetPhoto.addEventListener('click', clearSelection);
 
 function prepareImageForUpload(file) {
