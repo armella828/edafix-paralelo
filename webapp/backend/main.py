@@ -556,12 +556,13 @@ async def train_sample(params: TrainSampleParams) -> dict:
     img.save(out_file, format="PNG")
     return {"status": "saved", "label": label, "file": out_file.name}
 
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import os
 
 frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
 index_html_file = Path(frontend_path) / "index.html"
+app_js_file = Path(frontend_path) / "app.js"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -570,6 +571,16 @@ async def serve_index() -> HTMLResponse:
     if index_html_file.exists():
         return HTMLResponse(content=index_html_file.read_text(encoding="utf-8"))
     return HTMLResponse(content="<h1>EDAFix Server Running</h1>")
+
+
+@app.get("/app.js")
+async def serve_app_js() -> Response:
+    if app_js_file.exists():
+        return Response(
+            content=app_js_file.read_text(encoding="utf-8"),
+            media_type="application/javascript; charset=utf-8",
+        )
+    raise HTTPException(status_code=404, detail="app.js no encontrado")
 
 
 if os.path.exists(frontend_path):
