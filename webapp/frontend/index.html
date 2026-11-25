@@ -10,180 +10,466 @@
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            displ: ['Plus Jakarta Sans', 'Inter', 'ui-sans-serif', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
         },
       },
     };
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+    rel="stylesheet" />
+  <style>
+    body {
+      background-color: #050a09;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 15% -10%, rgba(16, 185, 129, 0.16), transparent 60%),
+        radial-gradient(ellipse 60% 45% at 88% 5%, rgba(245, 158, 11, 0.09), transparent 55%),
+        radial-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 24px 24px;
+    }
+
+    .glass-card {
+      background: linear-gradient(180deg, rgba(15, 23, 32, 0.86) 0%, rgba(10, 17, 24, 0.92) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .metric-tile {
+      background: linear-gradient(180deg, rgba(15, 23, 35, 0.85) 0%, rgba(8, 13, 21, 0.95) 100%);
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-up {
+      animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinner-icon {
+      animation: spin 0.9s linear infinite;
+    }
+  </style>
 </head>
 
-<body
-  class="min-h-screen bg-slate-900 text-slate-100 font-sans antialiased bg-gradient-to-br from-slate-900 via-emerald-950/40 to-slate-900">
+<body class="min-h-screen text-slate-100 font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
 
   <!-- Header -->
-  <header class="border-b border-slate-700/70 bg-slate-900/80 backdrop-blur sticky top-0 z-10">
-    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
+  <header class="border-b border-white/10 bg-slate-950/75 backdrop-blur-xl sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3.5">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center text-xl shadow-lg shadow-emerald-900/50">
-          🌱</div>
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-white/20 shrink-0">
+          <svg class="w-5 h-5 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+          </svg>
+        </div>
         <div>
-          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-emerald-300">EDAFix</h1>
-          <p class="text-xs text-slate-400 hidden sm:block">Clasificación Edafológica Paralela — Gran Chaco</p>
+          <div class="flex items-center gap-2">
+            <h1 class="font-display text-lg sm:text-xl font-extrabold tracking-tight text-white">EDAFix</h1>
+            <span
+              class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Parallel AI
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Clasificación Edafológica Distribuida — Gran Chaco</p>
         </div>
       </div>
-      <span id="apiBadge"
-        class="text-xs text-slate-400 bg-slate-800 border border-slate-700 px-3 py-1 rounded-full">API:
-        conectando...</span>
+
+      <div class="flex items-center gap-2.5">
+        <span
+          class="inline-flex items-center gap-2 text-xs font-medium text-slate-300 bg-white/[0.04] border border-white/10 px-3 py-1.5 rounded-full">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span id="apiBadge" class="font-mono text-[11px]">conectando...</span>
+        </span>
+      </div>
     </div>
   </header>
 
-  <!-- Tabs -->
-  <main class="max-w-5xl mx-auto px-4 py-6">
-    <div class="flex gap-2 bg-slate-800 border border-slate-700 rounded-2xl p-1.5 mb-6">
-      <button data-tab="farmer"
-        class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-emerald-600 text-white shadow-lg shadow-emerald-900/40">
-        🌾 Modo Agricultor
-      </button>
-      <button data-tab="lab"
-        class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm transition text-slate-300 hover:text-white hover:bg-slate-700/60">
-        🧪 Modo Laboratorio
-      </button>
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- Hero compacto + Navegación -->
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+      <div>
+        <div class="flex flex-wrap items-center gap-2 mb-2">
+          <span
+            class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Lotes 1–10 fotos en paralelo
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/25 text-sky-300">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+            </svg>
+            Humedad superficial óptica
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+            OpenMPI + OpenMP
+          </span>
+        </div>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          Diagnóstico inteligente de suelos
+        </h2>
+      </div>
+
+      <!-- Segmented Tabs -->
+      <div
+        class="inline-flex p-1.5 rounded-2xl bg-slate-900/90 border border-white/10 shadow-xl shadow-black/30 self-start md:self-auto w-full md:w-auto">
+        <button data-tab="farmer"
+          class="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-950/60">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22v-9" />
+            <path
+              d="M15.17 2.21a1.67 1.67 0 0 1 1.63 0L21 4.57a1.93 1.93 0 0 1 0 3.36L8.82 14.79a1.655 1.655 0 0 1-1.64 0L3 12.43a1.93 1.93 0 0 1 0-3.36z" />
+            <path
+              d="M20 13v3.87a2.06 2.06 0 0 1-1.11 1.83l-6 3.08a1.93 1.93 0 0 1-1.78 0l-6-3.08A2.06 2.06 0 0 1 4 16.87V13" />
+          </svg>
+          Modo Agricultor
+        </button>
+        <button data-tab="lab"
+          class="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all text-slate-400 hover:text-white hover:bg-white/5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 3h6" />
+            <path d="M10 9V3" />
+            <path d="M14 9V3" />
+            <path d="M10 9l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9" />
+            <path d="M7.5 15h9" />
+          </svg>
+          Modo Laboratorio
+        </button>
+      </div>
     </div>
 
     <!-- TAB 1: Modo Agricultor -->
-    <section id="panel-farmer" data-tab-panel class="block">
-      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
-        <div class="flex flex-wrap items-start justify-between gap-2 mb-1">
-          <h2 class="text-lg font-bold text-emerald-300">Análisis de Muestras de Suelo</h2>
-          <span id="selectionCounter"
-            class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-300">
-            0 / 10 imágenes
-          </span>
+    <section id="panel-farmer" data-tab-panel class="block space-y-6">
+      <div class="glass-card border border-white/10 rounded-3xl p-5 sm:p-7 shadow-2xl shadow-black/40">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 class="font-display text-lg font-bold text-white">Carga de Muestras de la Parcela</h3>
+            <p class="text-sm text-slate-400 mt-0.5">
+              Sube entre <strong class="text-slate-200">1 y 10 fotografías</strong> del terreno para clasificar tipo de
+              suelo, humedad superficial estimada y cultivo recomendado.
+            </p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="w-24 bg-slate-800/90 rounded-full h-2 border border-white/10 overflow-hidden hidden sm:block">
+              <div id="selectionProgressBar"
+                class="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                style="width: 0%"></div>
+            </div>
+            <span id="selectionCounter"
+              class="text-xs font-mono font-semibold px-3 py-1.5 rounded-full bg-slate-900/90 border border-white/10 text-slate-300">
+              0 / 10 imágenes
+            </span>
+          </div>
         </div>
-        <p class="text-sm text-slate-400 mb-5">Sube entre <strong>1 y 10 imágenes</strong> de suelo (.jpg / .png /
-          .webp) para analizarlas en paralelo, clasificar cada muestra y obtener el diagnóstico consolidado de la
-          parcela.</p>
 
-        <!-- Aviso límite -->
+        <!-- Aviso límite / errores de carga -->
         <div id="limitNotice"
-          class="hidden mb-4 bg-amber-900/40 border border-amber-500/70 text-amber-200 rounded-xl px-4 py-3 text-xs sm:text-sm font-medium">
+          class="hidden mb-4 bg-amber-500/10 border border-amber-500/40 text-amber-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-medium">
+        </div>
+        <div id="farmerErrorBanner"
+          class="hidden mb-4 bg-red-500/10 border border-red-500/40 text-red-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-medium">
         </div>
 
         <!-- Dropzone -->
         <div id="dropzone"
-          class="border-2 border-dashed border-slate-600 rounded-2xl p-6 sm:p-8 text-center cursor-pointer hover:border-emerald-500 transition bg-slate-900/60">
+          class="group relative border-2 border-dashed border-slate-700/90 hover:border-emerald-400/70 rounded-2xl p-6 sm:p-9 text-center cursor-pointer transition-all bg-slate-950/60 hover:bg-emerald-950/15">
           <input id="soilFile" type="file" accept="image/*" multiple class="hidden" />
-          <div id="dropzoneContent">
-            <div class="text-4xl mb-3">📸</div>
-            <p class="text-slate-300 font-medium">Arrastra y suelta de 1 a 10 imágenes de suelo aquí</p>
-            <p class="text-slate-500 text-xs mt-1">o haz clic para seleccionar varias fotos desde tu dispositivo</p>
+
+          <div id="dropzoneContent" class="py-2">
+            <div
+              class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:scale-105 group-hover:bg-emerald-500/15 transition-transform">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <p class="text-slate-100 font-semibold text-base">Arrastra y suelta de 1 a 10 imágenes de suelo aquí</p>
+            <p class="text-slate-400 text-xs sm:text-sm mt-1">o haz clic para seleccionar varias fotos desde tu equipo o
+              celular</p>
+            <div class="flex flex-wrap items-center justify-center gap-2 mt-4">
+              <span
+                class="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">JPG
+                · PNG · WEBP</span>
+              <span
+                class="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">Auto-optimizado
+                512×512</span>
+              <span
+                class="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">Filtro
+                anti-brillo y no-suelo</span>
+            </div>
           </div>
+
           <!-- Galería de vista previa -->
           <div id="previewContainer" class="hidden text-left">
             <div id="previewGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3"></div>
-            <p class="text-slate-400 text-xs mt-3 text-center">Haz clic en el recuadro o arrastra más fotos para agregar
-              (máximo 10)</p>
+            <p class="text-slate-400 text-xs mt-4 text-center">
+              Haz clic aquí o arrastra más imágenes para completar tu lote (máximo 10)
+            </p>
           </div>
         </div>
 
-        <div class="mt-5 flex flex-wrap gap-3">
+        <!-- Botones de acción -->
+        <div class="mt-5 flex flex-wrap items-center gap-3">
           <button id="btnAnalyze" disabled
-            class="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
-            🌿 Analizar Suelo en Paralelo
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-emerald-950/60 disabled:opacity-40 disabled:cursor-not-allowed">
+            <span id="btnAnalyzeIcon" class="inline-flex">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+            </span>
+            <span id="btnAnalyzeLabel">Analizar Suelo en Paralelo</span>
           </button>
+
           <button id="btnAddMore" type="button"
-            class="hidden w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold transition border border-slate-500">
-            ➕ Agregar más fotos
+            class="hidden w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.11] text-slate-100 font-semibold text-sm transition border border-white/10">
+            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Agregar más fotos
           </button>
+
           <button id="btnResetPhoto" type="button"
-            class="hidden w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-200 font-semibold transition border border-slate-700 hover:border-red-700">
-            🗑️ Limpiar todo
+            class="hidden w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-transparent hover:bg-red-500/15 text-slate-400 hover:text-red-300 font-semibold text-sm transition border border-white/10 hover:border-red-500/40 sm:ml-auto">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+            </svg>
+            Limpiar todo
           </button>
         </div>
       </div>
 
       <!-- Resultado -->
-      <div id="resultFarmer" class="hidden mt-6 space-y-6">
+      <div id="resultFarmer" class="hidden space-y-6 animate-fade-up">
         <!-- Resumen global (1 o varias imágenes) -->
-        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <h3 id="resultHeading" class="text-base font-bold text-emerald-300">📋 Resultado del Análisis</h3>
+        <div class="glass-card border border-white/10 rounded-3xl p-5 sm:p-7 shadow-2xl shadow-black/40">
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-5 border-b border-white/10">
+            <div class="flex items-center gap-2.5">
+              <div
+                class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              </div>
+              <h3 id="resultHeading" class="font-display text-base sm:text-lg font-bold text-white">Resultado del
+                Análisis</h3>
+            </div>
             <span id="executionModeBadge"
-              class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/70 text-emerald-300">
+              class="text-xs font-mono font-semibold px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
               —
             </span>
           </div>
 
+          <!-- Alertas contextuales -->
           <div id="invalidSoilAlert"
-            class="hidden mb-4 bg-red-900/40 border border-red-600 text-red-200 rounded-xl p-4 text-sm font-medium">
-            ⚠️ <strong>No se puede sembrar en este suelo:</strong> Las imágenes subidas no corresponden a muestras de
-            terreno agrícola aptas o presentan brillo/iluminación excesiva (no se calculan rugosidad ni humedad).
-          </div>
-          <div id="monteSoilAlert"
-            class="hidden mb-4 bg-amber-900/40 border border-amber-500 text-amber-200 rounded-xl p-4 text-sm font-medium">
-            🌿 <strong>Terreno cubierto de monte o maleza:</strong> Se detectó abundante cobertura vegetal en el
-            terreno. Antes de sembrar se requiere realizar <strong>desmonte / limpieza y preparación de suelo</strong>
-            (la humedad edáfica no se estima sobre follaje).
-          </div>
-          <div id="mixedBatchNote"
-            class="hidden mb-4 bg-sky-900/30 border border-sky-600/60 text-sky-200 rounded-xl p-3.5 text-xs sm:text-sm">
+            class="hidden mb-5 bg-red-500/10 border border-red-500/40 text-red-200 rounded-2xl p-4 text-sm flex items-start gap-3">
+            <span class="text-lg leading-none mt-0.5">⚠️</span>
+            <div>
+              <strong class="text-red-100">No se puede sembrar en este suelo:</strong> Las imágenes subidas no
+              corresponden a muestras de terreno agrícola aptas o presentan brillo/iluminación excesiva (no se calculan
+              rugosidad ni humedad).
+            </div>
           </div>
 
+          <div id="monteSoilAlert"
+            class="hidden mb-5 bg-amber-500/10 border border-amber-500/40 text-amber-200 rounded-2xl p-4 text-sm flex items-start gap-3">
+            <span class="text-lg leading-none mt-0.5">🌿</span>
+            <div>
+              <strong class="text-amber-100">Terreno cubierto de monte o maleza:</strong> Se detectó abundante cobertura
+              vegetal. Antes de sembrar se requiere realizar <strong>desmonte / limpieza y preparación de suelo</strong>
+              (la humedad edáfica no se estima sobre follaje).
+            </div>
+          </div>
+
+          <div id="mixedBatchNote"
+            class="hidden mb-5 bg-sky-500/10 border border-sky-500/35 text-sky-200 rounded-2xl px-4 py-3 text-xs sm:text-sm">
+          </div>
+
+          <!-- 4 Tarjetas KPI -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-              <p id="soilTypeLabel" class="text-xs uppercase tracking-wide text-slate-400 mb-1">Tipo de suelo</p>
-              <p id="soilType" class="text-2xl font-extrabold text-emerald-300">—</p>
-              <p id="soilDominanceMeta" class="hidden text-xs text-slate-400 mt-1"></p>
-            </div>
-            <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-              <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">Cultivo recomendado</p>
-              <p id="recommendedCrop" class="text-lg font-bold text-amber-300 mt-2">—</p>
-            </div>
-            <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-              <p id="moistureLabel" class="text-xs uppercase tracking-wide text-slate-400 mb-1">Humedad superficial (est.)</p>
-              <p id="moistureLevel" class="text-xl font-extrabold text-sky-400 mt-2">—</p>
-              <div id="moistureBarWrap" class="hidden mt-2">
-                <div class="w-full bg-slate-800 rounded-full h-2 border border-slate-700 overflow-hidden">
-                  <div id="moistureBar" class="h-2 rounded-full transition-all duration-500 bg-sky-400" style="width: 0%"></div>
+            <!-- Suelo -->
+            <div
+              class="metric-tile rounded-2xl p-4 border border-white/10 border-t-2 border-t-emerald-500/60 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <p id="soilTypeLabel" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Tipo
+                    de suelo</p>
+                  <svg class="w-4 h-4 text-emerald-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M2 22h20" />
+                    <path
+                      d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z" />
+                  </svg>
                 </div>
-                <p id="moistureAdvice" class="text-[11px] text-slate-400 mt-1.5 leading-snug"></p>
+                <p id="soilType" class="font-display text-2xl font-extrabold text-emerald-300 leading-tight">—</p>
+              </div>
+              <p id="soilDominanceMeta"
+                class="hidden text-[11px] font-medium text-emerald-200/80 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2.5 py-1 mt-3 w-fit">
+              </p>
+            </div>
+
+            <!-- Cultivo -->
+            <div
+              class="metric-tile rounded-2xl p-4 border border-white/10 border-t-2 border-t-amber-500/60 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Cultivo recomendado</p>
+                  <svg class="w-4 h-4 text-amber-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M7 20h10" />
+                    <path d="M10 20c5.5-2.5.8-6.4 3-10" />
+                    <path
+                      d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" />
+                    <path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />
+                  </svg>
+                </div>
+                <p id="recommendedCrop" class="text-base sm:text-lg font-bold text-amber-300 leading-snug">—</p>
               </div>
             </div>
-            <div class="bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-              <p id="roughnessLabel" class="text-xs uppercase tracking-wide text-slate-400 mb-1">Índice de rugosidad
-                (Sobel)</p>
-              <p id="roughness" class="text-2xl font-extrabold text-amber-400 mt-2">—</p>
+
+            <!-- Humedad -->
+            <div
+              class="metric-tile rounded-2xl p-4 border border-white/10 border-t-2 border-t-sky-500/60 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <p id="moistureLabel" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    Humedad superficial (est.)</p>
+                  <svg class="w-4 h-4 text-sky-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                  </svg>
+                </div>
+                <p id="moistureLevel" class="font-display text-xl font-extrabold text-sky-400 leading-tight">—</p>
+              </div>
+              <div id="moistureBarWrap" class="hidden mt-3">
+                <div class="w-full bg-slate-800/90 rounded-full h-2 border border-white/10 overflow-hidden">
+                  <div id="moistureBar" class="h-2 rounded-full transition-all duration-500 bg-sky-400"
+                    style="width: 0%"></div>
+                </div>
+                <p id="moistureAdvice" class="text-[11px] text-slate-400 mt-2 leading-snug"></p>
+              </div>
+            </div>
+
+            <!-- Rugosidad -->
+            <div
+              class="metric-tile rounded-2xl p-4 border border-white/10 border-t-2 border-t-violet-400/60 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <p id="roughnessLabel" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    Índice de rugosidad (Sobel)</p>
+                  <svg class="w-4 h-4 text-violet-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                </div>
+                <p id="roughness" class="font-mono text-2xl font-bold text-amber-400">—</p>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-3">Gradiente de textura 3×3</p>
             </div>
           </div>
 
-          <p id="moistureOpticalNote" class="hidden mt-3 text-[11px] text-slate-400">
-            ℹ️ Estimación óptica sobre la capa superficial del suelo (sombras intensas o reflejos solares pueden influir en el valor).
+          <p id="moistureOpticalNote" class="hidden mt-3.5 text-[11px] text-slate-400">
+            ℹ️ Estimación óptica sobre la capa superficial del suelo (sombras intensas o reflejos solares pueden influir
+            en el valor).
           </p>
 
           <!-- Distribución de tipos en lote (visible cuando hay >1 imagen) -->
-          <div id="batchDistributionBox" class="hidden mt-4 bg-slate-900/70 rounded-xl p-4 border border-slate-700">
-            <p class="text-xs uppercase tracking-wide text-slate-400 mb-2.5">Distribución de muestras en la parcela</p>
+          <div id="batchDistributionBox" class="hidden mt-5 metric-tile rounded-2xl p-4 border border-white/10">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Composición de la parcela</p>
+              <span id="batchValidRatio" class="text-[11px] font-mono text-slate-400"></span>
+            </div>
+            <!-- Barra apilada proporcional -->
+            <div id="batchStackedBar"
+              class="w-full h-2.5 rounded-full bg-slate-800/90 overflow-hidden flex gap-0.5 mb-3 border border-white/5">
+            </div>
             <div id="batchDistributionPills" class="flex flex-wrap gap-2"></div>
           </div>
 
-          <!-- Rendimiento y reparto paralelo -->
+          <!-- Telemetría paralela -->
           <div
-            class="mt-4 bg-slate-900/70 rounded-xl p-4 border border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-              <p class="text-xs uppercase tracking-wide text-slate-400">Tiempo total de análisis</p>
-              <p id="parallelMetaDetail" class="text-xs text-slate-400 mt-0.5"></p>
+            class="mt-5 metric-tile rounded-2xl p-4 border border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div
+                class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Rendimiento de ejecución
+                </p>
+                <p id="parallelMetaDetail" class="text-xs text-slate-300 mt-0.5"></p>
+              </div>
             </div>
-            <p id="responseTime" class="text-xl font-extrabold text-emerald-400">—</p>
+            <div class="sm:text-right">
+              <p class="text-[10px] uppercase tracking-wider text-slate-500">Tiempo total</p>
+              <p id="responseTime" class="font-mono text-xl font-bold text-emerald-400">—</p>
+            </div>
           </div>
         </div>
 
         <!-- Detalle individual por imagen (visible cuando hay >1 imagen) -->
-        <div id="batchDetailsSection" class="hidden bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-bold text-emerald-300">🖼️ Detalle Individual por Imagen</h3>
-            <span id="batchDetailsCount" class="text-xs text-slate-400"></span>
+        <div id="batchDetailsSection"
+          class="hidden glass-card border border-white/10 rounded-3xl p-5 sm:p-7 shadow-2xl shadow-black/40">
+          <div class="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
+            <div class="flex items-center gap-2.5">
+              <div
+                class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </div>
+              <h3 class="font-display text-base sm:text-lg font-bold text-white">Detalle Individual por Muestra</h3>
+            </div>
+            <span id="batchDetailsCount"
+              class="text-xs font-mono px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300"></span>
           </div>
           <div id="batchResultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
@@ -191,97 +477,140 @@
     </section>
 
     <!-- TAB 2: Modo Laboratorio -->
-    <section id="panel-lab" data-tab-panel class="hidden">
-      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 sm:p-6">
-        <h2 class="text-lg font-bold text-emerald-300 mb-1">Benchmark en Vivo — Clúster OpenMPI + OpenMP</h2>
-        <p class="text-sm text-slate-400 mb-5">Ejecuta la comparativa secuencial vs. paralela sobre los 3 nodos del
-          clúster.</p>
+    <section id="panel-lab" data-tab-panel class="hidden space-y-6">
+      <div class="glass-card border border-white/10 rounded-3xl p-5 sm:p-7 shadow-2xl shadow-black/40">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div>
+            <h3 class="font-display text-lg font-bold text-white">Benchmark en Vivo — Clúster OpenMPI + OpenMP</h3>
+            <p class="text-sm text-slate-400 mt-0.5">Compara el rendimiento secuencial (T<sub>1</sub>) frente a la
+              ejecución híbrida distribuida (T<sub>p</sub>) en 3 nodos.</p>
+          </div>
+          <div
+            class="inline-flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 self-start sm:self-auto">
+            <span>master</span>
+            <span class="text-amber-500/50">·</span>
+            <span>worker1</span>
+            <span class="text-amber-500/50">·</span>
+            <span>worker2</span>
+          </div>
+        </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <div>
-            <label for="numImages" class="block text-sm font-semibold text-slate-300 mb-2">Cantidad de imágenes
-              (N)</label>
+            <label for="numImages" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              Cantidad de imágenes (N)
+            </label>
             <select id="numImages"
-              class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500">
-              <option value="500">500 imágenes</option>
-              <option value="1000">1000 imágenes</option>
+              class="w-full bg-slate-950/80 border border-white/15 rounded-xl px-4 py-3 text-sm font-medium text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition">
+              <option value="500">500 imágenes (lote medio)</option>
+              <option value="1000">1000 imágenes (lote completo)</option>
             </select>
           </div>
           <div>
-            <label for="ompThreads" class="block text-sm font-semibold text-slate-300 mb-2">Hilos OpenMP</label>
+            <label for="ompThreads" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              Hilos OpenMP por nodo
+            </label>
             <select id="ompThreads"
-              class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500">
-              <option value="1">1 hilo</option>
-              <option value="2">2 hilos</option>
-              <option value="4">4 hilos</option>
+              class="w-full bg-slate-950/80 border border-white/15 rounded-xl px-4 py-3 text-sm font-medium text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition">
+              <option value="1">1 hilo por nodo (3 hilos totales)</option>
+              <option value="2">2 hilos por nodo (6 hilos totales)</option>
+              <option value="4">4 hilos por nodo (12 hilos totales)</option>
             </select>
           </div>
         </div>
 
         <button id="btnBenchmark"
-          class="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold transition shadow-lg shadow-amber-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
-          ⚡ Ejecutar Benchmark en Vivo (3 Nodos)
+          class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-amber-950/50 disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+          <span id="btnBenchmarkLabel">Ejecutar Benchmark en Vivo (3 Nodos)</span>
         </button>
       </div>
 
       <!-- KPI + comparativa -->
-      <div id="benchmarkResults" class="hidden mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5">
-          <h3 class="text-base font-bold text-emerald-300 mb-4">📊 Métricas de Rendimiento</h3>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
-              <p class="text-xs text-slate-400">Tiempo Secuencial (T1)</p>
-              <p id="kpiT1" class="text-lg font-extrabold text-amber-400 mt-1">—</p>
+      <div id="benchmarkResults" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-5 animate-fade-up">
+        <div class="glass-card border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl shadow-black/30">
+          <h4 class="font-display text-base font-bold text-white mb-4 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Métricas de Rendimiento
+          </h4>
+          <div class="grid grid-cols-2 gap-3.5">
+            <div class="metric-tile rounded-2xl p-4 border border-white/10 border-t-2 border-t-amber-500/60">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Secuencial (T1)</p>
+              <p id="kpiT1" class="font-mono text-lg sm:text-xl font-bold text-amber-400 mt-1.5">—</p>
             </div>
-            <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
-              <p class="text-xs text-slate-400">Tiempo Paralelo (Tp)</p>
-              <p id="kpiTp" class="text-lg font-extrabold text-emerald-400 mt-1">—</p>
+            <div class="metric-tile rounded-2xl p-4 border border-white/10 border-t-2 border-t-emerald-500/60">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Paralelo (Tp)</p>
+              <p id="kpiTp" class="font-mono text-lg sm:text-xl font-bold text-emerald-400 mt-1.5">—</p>
             </div>
-            <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
-              <p class="text-xs text-slate-400">Speedup (T1/Tp)</p>
-              <p id="kpiSpeedup" class="text-lg font-extrabold text-emerald-300 mt-1">—</p>
+            <div class="metric-tile rounded-2xl p-4 border border-white/10 border-t-2 border-t-teal-400/60">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Speedup (T1/Tp)</p>
+              <p id="kpiSpeedup" class="font-mono text-lg sm:text-xl font-bold text-teal-300 mt-1.5">—</p>
             </div>
-            <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700">
-              <p class="text-xs text-slate-400">Eficiencia</p>
-              <p id="kpiEff" class="text-lg font-extrabold text-amber-300 mt-1">—</p>
+            <div class="metric-tile rounded-2xl p-4 border border-white/10 border-t-2 border-t-sky-400/60">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Eficiencia (Ep)</p>
+              <p id="kpiEff" class="font-mono text-lg sm:text-xl font-bold text-sky-300 mt-1.5">—</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5">
-          <h3 class="text-base font-bold text-emerald-300 mb-4">⏱️ Comparativa de Tiempos</h3>
-          <div class="space-y-4">
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-slate-300 font-semibold">Secuencial (T1) — 1 proceso</span>
-                <span id="barT1Label" class="text-amber-400 font-mono">—</span>
-              </div>
-              <div class="w-full bg-slate-900 rounded-full h-4 border border-slate-700">
-                <div id="barT1" class="h-4 bg-amber-500 rounded-full transition-all duration-700" style="width: 0%">
+        <div
+          class="glass-card border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl shadow-black/30 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-display text-base font-bold text-white flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                Comparativa de Tiempos
+              </h4>
+              <span id="timeSavedBadge"
+                class="hidden text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300"></span>
+            </div>
+
+            <div class="space-y-5 mt-5">
+              <div>
+                <div class="flex justify-between text-xs mb-2">
+                  <span class="text-slate-300 font-semibold">Secuencial (T1) — 1 proceso</span>
+                  <span id="barT1Label" class="text-amber-400 font-mono font-bold">—</span>
+                </div>
+                <div class="w-full bg-slate-950/90 rounded-full h-4 border border-white/10 overflow-hidden p-0.5">
+                  <div id="barT1"
+                    class="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all duration-700"
+                    style="width: 0%">
+                  </div>
                 </div>
               </div>
-            </div>
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-slate-300 font-semibold">Paralelo (Tp) — OpenMP</span>
-                <span id="barTpLabel" class="text-emerald-400 font-mono">—</span>
-              </div>
-              <div class="w-full bg-slate-900 rounded-full h-4 border border-slate-700">
-                <div id="barTp" class="h-4 bg-emerald-500 rounded-full transition-all duration-700" style="width: 0%">
+              <div>
+                <div class="flex justify-between text-xs mb-2">
+                  <span class="text-slate-300 font-semibold">Paralelo Híbrido (Tp) — MPI + OpenMP</span>
+                  <span id="barTpLabel" class="text-emerald-400 font-mono font-bold">—</span>
+                </div>
+                <div class="w-full bg-slate-950/90 rounded-full h-4 border border-white/10 overflow-hidden p-0.5">
+                  <div id="barTp"
+                    class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
+                    style="width: 0%">
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+          <p class="text-[11px] text-slate-500 mt-6">
+            Distribución estática por bloques en OpenMPI con planificación dinámica <code
+              class="text-slate-400">schedule(dynamic)</code> en OpenMP.
+          </p>
         </div>
       </div>
 
       <div id="benchmarkError"
-        class="hidden mt-6 bg-red-900/40 border border-red-700 text-red-200 rounded-xl p-4 text-sm"></div>
+        class="hidden bg-red-500/10 border border-red-500/40 text-red-200 rounded-2xl p-4 text-sm"></div>
     </section>
   </main>
 
-  <footer class="max-w-5xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
-    EDAFIX — Tel420 Parallel AI for Soil Classification · FastAPI + Uvicorn + MPI/OpenMP
+  <footer class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-10 border-t border-white/5 mt-8">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <p><strong class="text-slate-400">EDAFix</strong> · TEL420 Sistemas Paralelos · UAJMS (FCIC — Yacuiba)</p>
+      <p class="font-mono text-[11px]">FastAPI · Pillow · OpenMPI + OpenMP</p>
+    </div>
   </footer>
 
   <script>
@@ -293,21 +622,24 @@
     if (apiBadge) {
       const host = window.location.hostname;
       apiBadge.textContent = (host === 'localhost' || host === '127.0.0.1' || !host)
-        ? 'API: localhost:8000'
-        : ('API: ' + host);
+        ? 'localhost:8000'
+        : host;
     }
 
     // ---------- Tabs ----------
     const tabs = document.querySelectorAll('[data-tab]');
     const panels = document.querySelectorAll('[data-tab-panel]');
+    const activeTabClasses = ['bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'text-white', 'shadow-lg', 'shadow-emerald-950/60'];
+    const inactiveTabClasses = ['text-slate-400', 'hover:text-white', 'hover:bg-white/5'];
 
     tabs.forEach(btn => {
       btn.addEventListener('click', () => {
         tabs.forEach(b => {
-          b.classList.remove('bg-emerald-600', 'text-white', 'shadow-lg', 'shadow-emerald-900/40', 'hover:bg-slate-700/60');
-          b.classList.add('text-slate-300');
+          b.classList.remove(...activeTabClasses);
+          b.classList.add(...inactiveTabClasses);
         });
-        btn.classList.add('bg-emerald-600', 'text-white', 'shadow-lg', 'shadow-emerald-900/40');
+        btn.classList.remove(...inactiveTabClasses);
+        btn.classList.add(...activeTabClasses);
 
         panels.forEach(p => { p.classList.add('hidden'); });
         const panel = document.getElementById('panel-' + btn.dataset.tab);
@@ -322,11 +654,18 @@
     const previewGrid = document.getElementById('previewGrid');
     const soilFile = document.getElementById('soilFile');
     const btnAnalyze = document.getElementById('btnAnalyze');
+    const btnAnalyzeIcon = document.getElementById('btnAnalyzeIcon');
+    const btnAnalyzeLabel = document.getElementById('btnAnalyzeLabel');
     const btnAddMore = document.getElementById('btnAddMore');
     const btnResetPhoto = document.getElementById('btnResetPhoto');
     const selectionCounter = document.getElementById('selectionCounter');
+    const selectionProgressBar = document.getElementById('selectionProgressBar');
     const limitNotice = document.getElementById('limitNotice');
+    const farmerErrorBanner = document.getElementById('farmerErrorBanner');
     const resultFarmer = document.getElementById('resultFarmer');
+
+    const ICON_BOLT = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>';
+    const ICON_SPINNER = '<svg class="w-4 h-4 spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9" stroke-opacity="0.25" /><path d="M21 12a9 9 0 0 0-9-9" /></svg>';
 
     /** @type {{ id: string, file: File, url: string }[]} */
     let selectedItems = [];
@@ -350,18 +689,32 @@
       limitNotice.classList.remove('hidden');
     }
 
+    function showFarmerError(message) {
+      if (!message) {
+        farmerErrorBanner.classList.add('hidden');
+        farmerErrorBanner.textContent = '';
+        return;
+      }
+      farmerErrorBanner.textContent = '❌ ' + message;
+      farmerErrorBanner.classList.remove('hidden');
+    }
+
     function updateSelectionUI() {
       const count = selectedItems.length;
       selectionCounter.textContent = count + ' / ' + MAX_IMAGES + ' imágenes';
+      if (selectionProgressBar) {
+        selectionProgressBar.style.          unt / MAX_IMAGES) * 100) + '%';
+      }
       selectionCounter.className = count > 0
-        ? 'text-xs font-semibold px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700 text-emerald-300'
-        : 'text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-300';
+                 font-mono font-semibold px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-300'
+        : 'text-xs font-mono font-semibold px-3 py-1.5 rou          -slate-900/90 border border-white/10 text-slate-300';
 
       if (count === 0) {
-        previewContainer.classList.add('hidden');
+            ontainer.classList.add('hidden');
         dropzoneContent.classList.remove('hidden');
         btnAnalyze.disabled = true;
-        btnAnalyze.textContent = '🌿 Analizar Suelo en Paralelo';
+        btnAnalyzeIcon.innerHTML = ICON_BOLT;
+        btnAnalyzeLabel.textContent = 'Analizar Suelo           ;
         btnAddMore.classList.add('hidden');
         btnResetPhoto.classList.add('hidden');
         previewGrid.innerHTML = '';
@@ -371,9 +724,10 @@
       dropzoneContent.classList.add('hidden');
       previewContainer.classList.remove('hidden');
       btnAnalyze.disabled = false;
-      btnAnalyze.textContent = count === 1
-        ? '🌿 Analizar 1 Imagen en Paralelo'
-        : '🌿 Analizar ' + count + ' Imágenes en Paralelo';
+      btnAnalyzeIcon.innerHTML = ICON_BOLT;
+      btnAnalyzeLabel.textContent = count === 1
+        ? 'Analizar 1 Imagen en Paralelo'
+        : 'Analizar ' + count + ' Imágenes en Paralelo';
       btnResetPhoto.classList.remove('hidden');
 
       if (count < MAX_IMAGES) {
@@ -388,24 +742,28 @@
 
       previewGrid.innerHTML = selectedItems.map((item, idx) => {
         const cardClass = count === 1
-          ? 'relative w-full max-w-md rounded-xl overflow-hidden border border-slate-700 bg-slate-950'
-          : 'relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 group';
+          ? 'relative w-full max-w-md rounded-2xl overflow-hidden border border-white/15 bg-slate-950 shadow-xl'
+          : 'relative rounded-xl overflow-hidden border border-white/10 bg-slate-950 group/card shadow-md hover:border-emerald-500/40 transition';
         const imgClass = count === 1
           ? 'w-full max-h-72 object-cover'
-          : 'w-full h-28 object-cover';
+          : 'w-full h-28 object-cover group-hover/card:scale-105 transition-transform duration-300';
         return (
           '<div class="' + cardClass + '">' +
+          '<div class="overflow-hidden relative">' +
           '<img src="' + item.url + '" alt="Muestra ' + (idx + 1) + '" class="' + imgClass + '" />' +
-          '<span class="absolute top-1.5 left-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-900/85 text-emerald-300 border border-slate-700">#' + (idx + 1) + '</span>' +
+          '<div class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-slate-950/90 to-transparent pointer-events-none"></div>' +
+          '</div>' +
+          '<span class="absolute top-2 left-2 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-950/85 text-emerald-300 border border-white/15 backdrop-blur">#' + (idx + 1) + '</span>' +
           '<button type="button" data-remove-id="' + item.id + '" title="Quitar imagen" ' +
-          'class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/85 hover:bg-red-600 text-slate-200 hover:text-white text-xs font-bold flex items-center justify-center border border-slate-600 transition">✕</button>' +
-          '<div class="px-2 py-1 text-[11px] text-slate-300 truncate bg-slate-900/90" title="' + escapeHtml(item.file.name) + '">' + escapeHtml(item.file.name) + '</div>' +
+          'class="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-950/85 hover:bg-red-500 text-slate-200 hover:text-white text-xs font-bold flex items-center justify-center border border-white/15 backdrop-blur transition">✕</button>' +
+          '<div class="px-2.5 py-1.5 text-[11px] text-slate-300 truncate bg-slate-950/95 border-t border-white/5" title="' + escapeHtml(item.file.name) + '">' + escapeHtml(item.file.name) + '</div>' +
           '</div>'
         );
       }).join('');
     }
 
     function addFiles(fileList) {
+      showFarmerError('');
       const incoming = Array.from(fileList || []).filter(f => !f.type || f.type.startsWith('image/'));
       if (incoming.length === 0) {
         showLimitNotice('⚠️ Solo se admiten archivos de imagen (.jpg, .png, .webp, .bmp).');
@@ -425,10 +783,10 @@
           file,
           url: URL.createObjectURL(file),
         });
-      });
+         
 
-      if (incoming.length > available) {
-        showLimitNotice('⚠️ Se permite un máximo de ' + MAX_IMAGES + ' imágenes. Se agregaron ' + toAdd.length + ' de las ' + incoming.length + ' seleccionadas.');
+       f (incoming.length > available) {
+        showLimitNotice('⚠️ Se permite un máximo de ' + M     AGES + ' imágenes. Se agregaron ' + toAdd.length + ' de las ' + incoming.length + ' s     ionadas.');
       } else {
         showLimitNotice('');
       }
@@ -442,6 +800,7 @@
       selectedItems = [];
       soilFile.value = '';
       showLimitNotice('');
+      showFarmerError('');
       resultFarmer.classList.add('hidden');
       updateSelectionUI();
     }
@@ -455,6 +814,7 @@
       if (target) URL.revokeObjectURL(target.url);
       selectedItems = selectedItems.filter(item => item.id !== id);
       showLimitNotice('');
+      showFarmerError('');
       resultFarmer.classList.add('hidden');
       updateSelectionUI();
     });
@@ -462,10 +822,10 @@
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
       dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
     });
-    dropzone.addEventListener('dragover', () => dropzone.classList.add('border-emerald-400', 'bg-emerald-950/20'));
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-emerald-400', 'bg-emerald-950/20'));
+    dropzone.addEventListener('dragover', () => dropzone.classList.add('border-emerald-400', 'bg-emerald-500/10'));
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-emerald-400', 'bg-emerald-500/10'));
     dropzone.addEventListener('drop', e => {
-      dropzone.classList.remove('border-emerald-400', 'bg-emerald-950/20');
+      dropzone.classList.remove('border-emerald-400', 'bg-emerald-500/10');
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         addFiles(e.dataTransfer.files);
       }
@@ -534,45 +894,45 @@
         return {
           text: 'text-amber-400',
           crop: 'text-amber-200',
-          pill: 'bg-amber-900/50 border-amber-600 text-amber-200',
+          pill: 'bg-amber-950/85 border-amber-500/60 text-amber-200',
         };
       }
       if (status === 'invalid' || status === 'error') {
         return {
           text: 'text-red-400',
           crop: 'text-red-300',
-          pill: 'bg-red-900/50 border-red-600 text-red-200',
+          pill: 'bg-red-950/85 border-red-500/60 text-red-200',
         };
       }
       if (soilType === 'Arenoso') {
         return {
           text: 'text-emerald-400',
-          crop: 'text-amber-300',
-          pill: 'bg-emerald-900/50 border-emerald-600 text-emerald-200',
+          crop: 'text-amber-200',
+          pill: 'bg-emerald-950/85 border-emerald-500/60 text-emerald-200',
         };
       }
       if (soilType === 'Arcilloso') {
         return {
-          text: 'text-amber-400',
-          crop: 'text-amber-300',
-          pill: 'bg-orange-900/50 border-orange-600 text-orange-200',
+          text: 'text-orange-400',
+          crop: 'text-amber-200',
+          pill: 'bg-orange-950/85 border-orange-500/60 text-orange-200',
         };
       }
       return {
         text: 'text-lime-400',
-        crop: 'text-amber-300',
-        pill: 'bg-lime-900/50 border-lime-600 text-lime-200',
+        crop: 'text-amber-200',
+        pill: 'bg-lime-950/85 border-lime-500/60 text-lime-200',
       };
     }
 
     function getMoistureStyle(level) {
       if (level === 'Seco') {
-        return { text: 'text-amber-400', bar: 'bg-amber-400', icon: '🏜️' };
+        return { text: 'text-amber-400', bar: 'bg-gradient-to-r from-amber-500 to-yellow-400', icon: '🏜️' };
       }
       if (level === 'Húmedo / Saturado') {
-        return { text: 'text-blue-400', bar: 'bg-blue-500', icon: '🌊' };
+        return { text: 'text-blue-400', bar: 'bg-gradient-to-r from-blue-600 to-cyan-400', icon: '🌊' };
       }
-      return { text: 'text-sky-400', bar: 'bg-sky-400', icon: '💧' };
+      return { text: 'text-sky-400', bar: 'bg-gradient-to-r from-sky-500 to-teal-400', icon: '💧' };
     }
 
     function renderAnalysisResponse(data, snapshotItems) {
@@ -585,8 +945,8 @@
 
       // Encabezado y badge de ejecución paralela
       document.getElementById('resultHeading').textContent = isBatch
-        ? '📋 Diagnóstico Consolidado de la Parcela (' + total + ' imágenes)'
-        : '📋 Resultado del Análisis';
+        ? 'Diagnóstico Consolidado de la Parcela (' + total + ' imágenes)'
+        : 'Resultado del Análisis';
 
       const modeBadge = document.getElementById('executionModeBadge');
       const parallelDetail = document.getElementById('parallelMetaDetail');
@@ -596,10 +956,10 @@
         const distText = Object.entries(dist).map(([k, v]) => k + ': ' + v).join(' · ');
         parallelDetail.textContent = 'Reparto en clúster (' + distText + ') · Tiempo MPI: ' + Number(data.cluster_time_ms ?? 0).toFixed(2) + ' ms';
       } else {
-        modeBadge.textContent = '☁️ Procesamiento Paralelo (' + (data.workers_used || 1) + ' hilos · Serverless)';
+        modeBadge.textContent = '☁️ Paralelo Serverless (' + (data.workers_used || 1) + ' hilos)';
         parallelDetail.textContent = isBatch
-          ? 'Lote de ' + total + ' muestras procesado en paralelo (optimizado para Vercel)'
-          : 'Muestra procesada en el backend serverless';
+          ? 'Lote de ' + total + ' muestras procesado concurrentemente (optimizado para Vercel)'
+          : 'Muestra procesada en backend serverless';
       }
 
       document.getElementById('responseTime').textContent = Number(data.response_time_ms ?? 0).toFixed(2) + ' ms';
@@ -633,12 +993,12 @@
 
       const style = getStatusStyle(primary.soil_status, primary.soil_type);
       badge.textContent = primary.soil_type || '—';
-      badge.className = 'text-2xl font-extrabold mt-2 ' + style.text;
+      badge.className = 'font-display text-2xl font-extrabold leading-tight ' + style.text;
       cropEl.textContent = primary.recommended_crop || '—';
-      cropEl.className = 'text-lg font-bold mt-2 ' + style.crop;
+      cropEl.className = 'text-base sm:text-lg font-bold leading-snug ' + style.crop;
 
       if (isBatch && summary.dominant_status === 'valid') {
-        dominanceMeta.textContent = summary.dominant_count + ' de ' + summary.valid_soil_count + ' muestras válidas (' + summary.dominant_percentage + '%)';
+        dominanceMeta.textContent = summary.dominant_count + ' de ' + summary.valid_soil_count + ' válidas (' + summary.dominant_percentage + '%)';
         dominanceMeta.classList.remove('hidden');
       } else {
         dominanceMeta.classList.add('hidden');
@@ -649,35 +1009,30 @@
         const mStyle = getMoistureStyle(primary.moisture_level);
         const pct = Math.max(0, Math.min(100, Number(primary.moisture_index)));
         moistureEl.textContent = mStyle.icon + ' ' + primary.moisture_level + ' (' + pct.toFixed(0) + '%)';
-        moistureEl.className = 'text-xl font-extrabold mt-2 ' + mStyle.text;
-        moistureBar.style.width = pct + '%';
-        moistureBar.className = 'h-2 rounded-full transition-all duration-500 ' + mStyle.bar;
-        moistureAdviceEl.textContent = primary.moisture_advice || '';
+        moistureEl.className = 'font-display text-xl font-extrabold leading-tight ' + mSt                moistureBar.style.width = pct + '%';
+            Bar.className = 'h-2 rounded-full transition-all duration-500 ' + mStyle.bar;
+        moistureAdviceEl.textContent = pri          advice || '';
         moistureBarWrap.classList.remove('hidden');
         moistureNote.textContent = primary.lighting_warning
-          ? '⚠️ Se detectaron reflejos/brillo parcial en la escena: la estimación óptica de humedad superficial puede variar según la iluminación.'
-          : 'ℹ️ Estimación óptica sobre la capa superficial del suelo (sombras intensas o reflejos solares pueden influir en el valor).';
-        moistureNote.className = primary.lighting_warning
-          ? 'mt-3 text-[11px] text-amber-300'
-          : 'mt-3 text-[11px] text-slate-400';
-      } else if (primary.soil_status === 'monte') {
-        moistureEl.textContent = 'No aplica (monte)';
-        moistureEl.className = 'text-base font-semibold text-slate-500 mt-2';
+          ? '⚠️ Se detectaron reflejos/b          en la escena: la estimación óptica de humedad superficial puede variar según la iluminación.'
+          : 'ℹ️ Estimación óptica sobre la capa superficial del           as intensas          solares pueden influir en el valor).';
+        moistureNote.classNa          ighting_wa          ? 'mt-3.5 text-[11px] text-amber-300'
+          : 'mt-3.5 text-[11px] text-slate-400';
+      } else if (primary.soil_status === 'mon          oistureEl.textContent = 'No aplica (monte)';
+        moistureEl.className = 'text-base          ext-slate-500 mt-1';
         moistureBarWrap.classList.add('hidden');
-        moistureNote.classList.add('hidden');
-      } else {
-        moistureEl.textContent = 'No aplica (no es suelo)';
-        moistureEl.className = 'text-base font-semibold text-slate-500 mt-2';
-        moistureBarWrap.classList.add('hidden');
-        moistureNote.classList.add('hidden');
+        moistureNote.classList.add('            } else {
+          reEl.textContent = 'No aplica (no es suelo)';
+        moistureEl.className = 'text-base fon          slate-500 mt-1';
+        moistureBarWrap.classList.add('hi          moistureNote.classList.add('hidden');
       }
 
-      if (primary.soil_status === 'invalid' || primary.soil_status === 'error' || primary.roughness_index === null || primary.roughness_index === undefined) {
-        roughnessEl.textContent = 'No aplica (no es suelo)';
-        roughnessEl.className = 'text-base font-semibold text-slate-500 mt-2';
+      if (primary.soil_status === 'invalid' || primary.soil_status === 'error'          ughness_ind          || primary.roughness_index === undefined) {
+        roughnessEl.textContent = 'No aplica';
+        roughnessEl.className = 'text-base font-semibold text-slate-500 mt-1';
       } else {
         roughnessEl.textContent = Number(primary.roughness_index).toFixed(4);
-        roughnessEl.className = 'text-2xl font-extrabold text-amber-400 mt-2';
+        roughnessEl.className = 'font-mono text-2xl font-bold text-amber-400';
       }
 
       // Alertas globales
@@ -704,6 +1059,8 @@
       // Distribución y tarjetas individuales (solo si >1 imagen)
       const distBox = document.getElementById('batchDistributionBox');
       const distPills = document.getElementById('batchDistributionPills');
+      const stackedBar = document.getElementById('batchStackedBar');
+      const validRatioEl = document.getElementById('batchValidRatio');
       const detailsSection = document.getElementById('batchDetailsSection');
       const detailsGrid = document.getElementById('batchResultsGrid');
       const detailsCount = document.getElementById('batchDetailsCount');
@@ -711,24 +1068,33 @@
       if (!isBatch) {
         distBox.classList.add('hidden');
         detailsSection.classList.add('hidden');
+        resultFarmer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         return;
       }
 
       const counts = summary.counts_by_soil || {};
-      const pills = [
-        { label: 'Arenoso', count: counts.Arenoso || 0, cls: 'bg-emerald-900/50 border-emerald-600 text-emerald-200' },
-        { label: 'Arcilloso', count: counts.Arcilloso || 0, cls: 'bg-orange-900/50 border-orange-600 text-orange-200' },
-        { label: 'Limoso', count: counts.Limoso || 0, cls: 'bg-lime-900/50 border-lime-600 text-lime-200' },
-        { label: 'Monte / Vegetación', count: summary.monte_count || 0, cls: 'bg-amber-900/50 border-amber-600 text-amber-200' },
-        { label: 'No apto', count: (summary.invalid_count || 0) + (summary.error_count || 0), cls: 'bg-red-900/50 border-red-600 text-red-200' },
+      const segments = [
+        { label: 'Arenoso', count: counts.Arenoso || 0, cls: 'bg-emerald-500/15 border-emerald-500/35 text-emerald-200', bar: 'bg-emerald-500' },
+        { label: 'Arcilloso', count: counts.Arcilloso || 0, cls: 'bg-orange-500/15 border-orange-500/35 text-orange-200', bar: 'bg-orange-500' },
+        { label: 'Limoso', count: counts.Limoso || 0, cls: 'bg-lime-500/15 border-lime-500/35 text-lime-200', bar: 'bg-lime-500' },
+        { label: 'Monte / Vegetación', count: summary.monte_count || 0, cls: 'bg-amber-500/15 border-amber-500/35 text-amber-200', bar: 'bg-amber-500' },
+        { label: 'No apto', count: (summary.invalid_count || 0) + (summary.error_count || 0), cls: 'bg-red-500/15 border-red-500/35 text-red-200', bar: 'bg-red-500' },
       ].filter(p => p.count > 0);
 
-      distPills.innerHTML = pills.map(p =>
-        '<span class="text-xs font-semibold px-3 py-1.5 rounded-full border ' + p.cls + '">' + p.label + ': <strong>' + p.count + '</strong></span>'
+      validRatioEl.textContent = (summary.valid_soil_count || 0) + ' / ' + total + ' válidas';
+      stackedBar.innerHTML = segments.map(s => {
+        const pct = (s.count / total) * 100;
+        return '<div class="h-full ' + s.bar + '" style="width: ' + pct.toFixed(1) + '%" title="' + s.label + ': ' + s.count + '"></div>';
+      }).join('');
+
+      distPills.innerHTML = segments.map(p =>
+        '<span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border ' + p.cls + '">' +
+        '<span class="w-2 h-2 rounded-full ' + p.bar + '"></span>' +
+        p.label + ': <strong class="font-mono">' + p.count + '</strong></span>'
       ).join('');
       distBox.classList.remove('hidden');
 
-      detailsCount.textContent = results.length + ' muestra(s) analizadas';
+      detailsCount.textContent = results.length + ' muestra(s)';
       detailsGrid.innerHTML = results.map((item, idx) => {
         const snap = snapshotItems[item.index] || snapshotItems[idx];
         const thumbUrl = snap ? snap.url : '';
@@ -737,29 +1103,30 @@
         const roughText = showRoughness ? Number(item.roughness_index).toFixed(4) : 'No aplica';
         const showMoisture = item.soil_status === 'valid' && item.moisture_index !== null && item.moisture_index !== undefined;
         const mSt = showMoisture ? getMoistureStyle(item.moisture_level) : null;
-        const moistText = showMoisture
+        const moistText =howe
           ? (mSt.icon + ' ' + escapeHtml(item.moisture_level) + ' (' + Number(item.moisture_index).toFixed(0) + '%)')
           : 'No aplica';
 
         return (
-          '<article class="bg-slate-900/80 border border-slate-700 rounded-xl overflow-hidden flex flex-col">' +
-          '<div class="relative h-36 bg-slate-950">' +
-          (thumbUrl ? '<img src="' + thumbUrl + '" alt="Muestra ' + (idx + 1) + '" class="w-full h-full object-cover" />' : '') +
-          '<span class="absolute top-2 left-2 text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-900/85 text-slate-200 border border-slate-700">#' + (idx + 1) + '</span>' +
-          '<span class="absolute bottom-2 right-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ' + st.pill + '">' + escapeHtml(item.soil_type) + '</span>' +
+          '<article class="metric-tile border border-white/10 hover:border-white/20 rounded-2xl overflow-hidden flex flex-col transition group">' +
+          '<div class="relative h-40 bg-slate-950 overflow-hidden">' +
+          (thumbUrl ? '<img src="' + thumbUrl + '" alt="Muestra ' + (idx + 1) + '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />' : '') +
+          '<div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/30 pointer-events-none"></div>' +
+          '<span class="absolute top-2.5 left-2.5 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-950/80 text-slate-200 border border-white/15 backdrop-blur">#' + (idx + 1) + '</span>' +
+          '<span class="absolute bottom-2.5 right-2.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full border backdrop-blur ' + st.pill + '">' + escapeHtml(item.soil_type) + '</span>' +
           '</div>' +
-          '<div class="p-3.5 flex-1 flex flex-col justify-between gap-2">' +
+          '<div class="p-4 flex-1 flex flex-col justify-between gap-3">' +
           '<div>' +
-          '<p class="text-xs text-slate-400 truncate mb-1" title="' + escapeHtml(item.filename) + '">' + escapeHtml(item.filename) + '</p>' +
-          '<p class="text-xs uppercase tracking-wide text-slate-500">Cultivo recomendado</p>' +
-          '<p class="text-sm font-semibold ' + st.crop + ' mt-0.5">' + escapeHtml(item.recommended_crop) + '</p>' +
+          '<p class="text-[11px] font-mono text-slate-400 truncate mb-2" title="' + escapeHtml(item.filename) + '">' + escapeHtml(item.filename) + '</p>' +
+          '<p class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cultivo recomendado</p>' +
+          '<p class="text-sm font-semibold ' + st.crop + ' mt-0.5 leading-snug">' + escapeHtml(item.recommended_crop) + '</p>' +
           '</div>' +
-          '<div class="pt-2 border-t border-slate-800 space-y-1.5 text-xs">' +
-          '<div class="flex items-center justify-between">' +
+          '<div class="pt-3 border-t border-white/10 space-y-2 text-xs">' +
+          '<div class="flex items-center justify-between gap-2">' +
           '<span class="text-slate-400">Humedad (est.)</span>' +
-          '<span class="font-semibold ' + (showMoisture ? mSt.text : 'text-slate-500') + '">' + moistText + '</span>' +
+          '<span class="font-semibold text-right ' + (showMoisture ? mSt.text : 'text-slate-500') + '">' + moistText + '</span>' +
           '</div>' +
-          '<div class="flex items-center justify-between">' +
+          '<div class="flex items-center justify-between gap-2">' +
           '<span class="text-slate-400">Rugosidad (Sobel)</span>' +
           '<span class="font-mono font-bold ' + (showRoughness ? 'text-amber-400' : 'text-slate-500') + '">' + roughText + '</span>' +
           '</div>' +
@@ -769,20 +1136,23 @@
         );
       }).join('');
       detailsSection.classList.remove('hidden');
+      resultFarmer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     btnAnalyze.addEventListener('click', async () => {
+      showFarmerError('');
       if (selectedItems.length === 0) {
-        alert('Selecciona o arrastra entre 1 y 10 imágenes de suelo primero.');
+        showFarmerError('Selecciona o arrastra entre 1 y 10 imágenes de suelo primero.');
         return;
       }
 
       const snapshotItems = selectedItems.slice();
       const count = snapshotItems.length;
       btnAnalyze.disabled = true;
-      btnAnalyze.textContent = count === 1
-        ? '🌿 Preparando y analizando imagen...'
-        : '🌿 Optimizando y analizando ' + count + ' imágenes en paralelo...';
+      btnAnalyzeIcon.innerHTML = ICON_SPINNER;
+      btnAnalyzeLabel.textContent = count === 1
+        ? 'Optimizando y analizando imagen...'
+        : 'Analizando ' + count + ' imágenes en paralelo...';
 
       try {
         // Redimensionar en paralelo a 512x512 en cliente para compatibilidad total con Vercel (<4.5 MB)
@@ -806,12 +1176,13 @@
 
         renderAnalysisResponse(data, snapshotItems);
       } catch (err) {
-        alert('Error conectando con el backend: ' + (err.message || 'desconocido'));
+        showFarmerError('Error conectando con el backend: ' + (err.message || 'desconocido'));
       } finally {
         btnAnalyze.disabled = selectedItems.length === 0;
-        btnAnalyze.textContent = selectedItems.length <= 1
-          ? '🌿 Analizar ' + (selectedItems.length === 1 ? '1 Imagen' : 'Suelo') + ' en Paralelo'
-          : '🌿 Analizar ' + selectedItems.length + ' Imágenes en Paralelo';
+        btnAnalyzeIcon.innerHTML = ICON_BOLT;
+        btnAnalyzeLabel.textContent = selectedItems.length <= 1
+          ? 'Analizar ' + (selectedItems.length === 1 ? '1 Imagen' : 'Suelo') + ' en Paralelo'
+          : 'Analizar ' + selectedItems.length + ' Imágenes en Paralelo';
       }
     });
 
@@ -831,18 +1202,20 @@
         }
         btnAnalyze.click();
       } catch (err) {
-        alert('Error guardando en el dataset: ' + (err.message || 'desconocido'));
+        showFarmerError('Error guardando en el dataset: ' + (err.message || 'desconocido'));
       }
     }
 
     // ---------- Tab 2: Benchmark ----------
     const btnBenchmark = document.getElementById('btnBenchmark');
+    const btnBenchmarkLabel = document.getElementById('btnBenchmarkLabel');
     const benchmarkResults = document.getElementById('benchmarkResults');
     const benchmarkError = document.getElementById('benchmarkError');
+    const timeSavedBadge = document.getElementById('timeSavedBadge');
 
     btnBenchmark.addEventListener('click', async () => {
       btnBenchmark.disabled = true;
-      btnBenchmark.textContent = '⚡ Ejecutando benchmark en clúster (3 nodos)...';
+      btnBenchmarkLabel.textContent = 'Ejecutando benchmark en clúster (3 nodos)...';
       benchmarkError.classList.add('hidden');
       benchmarkResults.classList.add('hidden');
 
@@ -856,6 +1229,9 @@
           }),
         });
         const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || ('Error HTTP ' + res.status));
+        }
 
         const T1 = Number(data.T1);
         const Tp = Number(data.Tp);
@@ -864,7 +1240,7 @@
 
         document.getElementById('kpiT1').textContent = T1.toFixed(6) + ' s';
         document.getElementById('kpiTp').textContent = Tp.toFixed(6) + ' s';
-        document.getElementById('kpiSpeedup').textContent = 'x' + Speedup.toFixed(2);
+        document.getElementById('kpiSpeedup').textContent = '×' + Speedup.toFixed(2);
         document.getElementById('kpiEff').textContent = (Eficiencia * 100).toFixed(2) + ' %';
 
         const maxT = Math.max(T1, Tp) || 1;
@@ -873,13 +1249,21 @@
         document.getElementById('barTp').style.width = (Tp / maxT * 100) + '%';
         document.getElementById('barTpLabel').textContent = Tp.toFixed(6) + ' s';
 
+        if (T1 > 0 && Tp < T1) {
+          const savedPct = ((1 - Tp / T1) * 100).toFixed(1);
+          timeSavedBadge.textContent = '-' + savedPct + '% tiempo';
+          timeSavedBadge.classList.remove('hidden');
+        } else {
+          timeSavedBadge.classList.add('hidden');
+        }
+
         benchmarkResults.classList.remove('hidden');
       } catch (err) {
         benchmarkError.textContent = '❌ Error ejecutando el benchmark: ' + (err.message || 'desconocido');
         benchmarkError.classList.remove('hidden');
       } finally {
         btnBenchmark.disabled = false;
-        btnBenchmark.textContent = '⚡ Ejecutar Benchmark en Vivo (3 Nodos)';
+        btnBenchmarkLabel.textContent = 'Ejecutar Benchmark en Vivo (3 Nodos)';
       }
     });
   </script>
